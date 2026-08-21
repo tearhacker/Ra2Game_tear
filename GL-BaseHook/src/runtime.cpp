@@ -1,5 +1,9 @@
-#include "pch.h"
+﻿#include "pch.h"
 
+#include "feature_infinite_health.h"
+#include "feature_instant_build.h"
+#include "feature_veterancy_max.h"
+#include "game_hooks.h"
 #include "log.h"
 #include "render_hook.h"
 #include "runtime.h"
@@ -36,6 +40,27 @@ DWORD WINAPI Ra2Overlay::Runtime::WorkerThread(void* moduleParameter)
         FreeLibraryAndExitThread(module, 1);
     }
 
+    if (!GameHooks::Initialize())
+    {
+        Log::Write("Game hooks initialization failed; unloading module");
+        RenderHook::Shutdown();
+        Log::Shutdown();
+        if (g_shutdownEvent)
+        {
+            CloseHandle(g_shutdownEvent);
+        }
+        if (g_renderStoppedEvent)
+        {
+            CloseHandle(g_renderStoppedEvent);
+        }
+        FreeLibraryAndExitThread(module, 1);
+    }
+
+    // 注册持续型功能帧回调（GameHooks 已就绪，渲染线程随后启动）。
+    Ra2Overlay::InfiniteHealth::Register();
+    Ra2Overlay::InstantBuild::Register();
+    Ra2Overlay::VeterancyMax::Register();
+
     while (WaitForSingleObject(g_shutdownEvent, 100) == WAIT_TIMEOUT)
     {
         Log::Flush();
@@ -53,6 +78,7 @@ DWORD WINAPI Ra2Overlay::Runtime::WorkerThread(void* moduleParameter)
         }
     }
 
+    GameHooks::Shutdown();
     RenderHook::Shutdown();
     Log::Write("Hook removed; unloading module");
     Log::Shutdown();

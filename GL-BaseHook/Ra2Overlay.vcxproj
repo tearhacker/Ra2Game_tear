@@ -35,18 +35,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel><Optimization>Disabled</Optimization><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp17</LanguageStandard><RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel><Optimization>Disabled</Optimization><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp20</LanguageStandard><RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\imgui\backends;$(ProjectDir)third_party\minhook\include;$(ProjectDir)third_party\minhook\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\imgui\backends;$(ProjectDir)third_party\minhook\include;$(ProjectDir)third_party\minhook\src;$(ProjectDir)..\分析第三方项目\YRpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link><SubSystem>Windows</SubSystem><GenerateDebugInformation>true</GenerateDebugInformation><TargetMachine>MachineX86</TargetMachine><AdditionalDependencies>opengl32.lib;gdi32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel><Optimization>MaxSpeed</Optimization><FunctionLevelLinking>true</FunctionLevelLinking><IntrinsicFunctions>true</IntrinsicFunctions><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp17</LanguageStandard><RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel><Optimization>MaxSpeed</Optimization><FunctionLevelLinking>true</FunctionLevelLinking><IntrinsicFunctions>true</IntrinsicFunctions><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp20</LanguageStandard><RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\imgui\backends;$(ProjectDir)third_party\minhook\include;$(ProjectDir)third_party\minhook\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\imgui\backends;$(ProjectDir)third_party\minhook\include;$(ProjectDir)third_party\minhook\src;$(ProjectDir)..\分析第三方项目\YRpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link><SubSystem>Windows</SubSystem><EnableCOMDATFolding>true</EnableCOMDATFolding><OptimizeReferences>true</OptimizeReferences><GenerateDebugInformation>true</GenerateDebugInformation><TargetMachine>MachineX86</TargetMachine><AdditionalDependencies>opengl32.lib;gdi32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
@@ -54,7 +54,7 @@
   <ItemGroup>
     <ClCompile Include="src\diagnostics.cpp" /><ClCompile Include="src\dllmain.cpp" /><ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\pch.cpp"><PrecompiledHeader>Create</PrecompiledHeader></ClCompile>
-    <ClCompile Include="src\render_hook.cpp" /><ClCompile Include="src\runtime.cpp" /><ClCompile Include="src\ui_shell.cpp" /><ClCompile Include="src\window_bridge.cpp" />
+    <ClCompile Include="src\render_hook.cpp" /><ClCompile Include="src\runtime.cpp" /><ClCompile Include="src\ui_shell.cpp" /><ClCompile Include="src\window_bridge.cpp" /><ClCompile Include="src\esp.cpp" /><ClCompile Include="src\game_hooks.cpp" /><ClCompile Include="src\feature_reveal_map.cpp" /><ClCompile Include="src\feature_infinite_health.cpp" /><ClCompile Include="src\feature_instant_build.cpp" /><ClCompile Include="src\feature_veterancy_max.cpp" />
     <ClCompile Include="third_party\imgui\imgui.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="third_party\imgui\imgui_demo.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="third_party\imgui\imgui_draw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
@@ -68,7 +68,7 @@
     <ClCompile Include="third_party\minhook\src\hde\hde32.c"><PrecompiledHeader>NotUsing</PrecompiledHeader><CompileAs>CompileAsC</CompileAs><DisableSpecificWarnings>4100;4201;4244;4310;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings></ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\diagnostics.h" /><ClInclude Include="src\log.h" /><ClInclude Include="src\pch.h" /><ClInclude Include="src\render_hook.h" /><ClInclude Include="src\runtime.h" /><ClInclude Include="src\ui_shell.h" /><ClInclude Include="src\window_bridge.h" />
+    <ClInclude Include="src\diagnostics.h" /><ClInclude Include="src\esp.h" /><ClInclude Include="src\log.h" /><ClInclude Include="src\pch.h" /><ClInclude Include="src\render_hook.h" /><ClInclude Include="src\runtime.h" /><ClInclude Include="src\ui_shell.h" /><ClInclude Include="src\window_bridge.h" /><ClInclude Include="src\game_hooks.h" /><ClInclude Include="src\feature_reveal_map.h" /><ClInclude Include="src\feature_infinite_health.h" /><ClInclude Include="src\feature_instant_build.h" /><ClInclude Include="src\feature_veterancy_max.h" />
     <ClInclude Include="third_party\imgui\imconfig.h" /><ClInclude Include="third_party\imgui\imgui.h" /><ClInclude Include="third_party\imgui\imgui_internal.h" /><ClInclude Include="third_party\imgui\backends\imgui_impl_opengl2.h" /><ClInclude Include="third_party\imgui\backends\imgui_impl_win32.h" /><ClInclude Include="third_party\minhook\include\MinHook.h" />
   </ItemGroup>
   <ItemGroup><Text Include="README.md" /><Text Include="THIRD_PARTY.md" /><Text Include="third_party\imgui\LICENSE.txt" /><Text Include="third_party\minhook\LICENSE.txt" /></ItemGroup>

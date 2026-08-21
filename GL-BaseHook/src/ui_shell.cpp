@@ -1,6 +1,11 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "diagnostics.h"
+#include "esp.h"
+#include "feature_infinite_health.h"
+#include "feature_instant_build.h"
+#include "feature_reveal_map.h"
+#include "feature_veterancy_max.h"
 #include "log.h"
 #include "runtime.h"
 #include "ui_shell.h"
@@ -11,6 +16,33 @@ namespace
     std::atomic_bool g_menuVisible{ true };
     HWND g_window = nullptr;
     HGLRC g_renderContext = nullptr;
+
+    // ImGui 默认字体(ProggyClean)不含 CJK 字形，中文会被渲染成 "?"。
+    // 按优先级从系统字体目录加载一个支持中文的字体，注册全部常用汉字字形。
+    void LoadChineseFont()
+    {
+        static const char* const kFontCandidates[] = {
+            "C:\\Windows\\Fonts\\msyh.ttc",   // 微软雅黑
+            "C:\\Windows\\Fonts\\msyhbd.ttc", // 微软雅黑 Bold
+            "C:\\Windows\\Fonts\\simhei.ttf", // 黑体
+            "C:\\Windows\\Fonts\\simsun.ttc", // 宋体
+        };
+
+        ImGuiIO& io = ImGui::GetIO();
+        for (const char* const path : kFontCandidates)
+        {
+            if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
+            {
+                continue;
+            }
+            if (io.Fonts->AddFontFromFileTTF(path, 17.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull()))
+            {
+                Ra2Overlay::Log::Write("UI font loaded: %s", path);
+                return;
+            }
+        }
+        Ra2Overlay::Log::Write("UI font: no Chinese-capable system font found");
+    }
 
     void ApplyRa2Style()
     {
@@ -130,6 +162,7 @@ bool Ra2Overlay::UiShell::Initialize(HWND window, HDC deviceContext, HGLRC rende
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ApplyRa2Style();
+    LoadChineseFont();
     ImGui::GetIO().IniFilename = nullptr;
 
     if (!ImGui_ImplWin32_Init(window))
@@ -230,6 +263,34 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                     ImGui::TextUnformatted("Renderer backend: OpenGL2");
                     ImGui::EndTabItem();
                 }
+
+                const bool espOpen = ImGui::BeginTabItem("ESP");
+                DecorateTab("ESP", espOpen);
+                if (espOpen)
+                {
+                    Ra2Overlay::Esp::RenderConfig();
+                    ImGui::EndTabItem();
+                }
+
+                const bool revealMapOpen = ImGui::BeginTabItem("Reveal Map");
+                DecorateTab("Reveal Map", revealMapOpen);
+                if (revealMapOpen)
+                {
+                    Ra2Overlay::RevealMap::RenderConfig();
+                    ImGui::EndTabItem();
+                }
+
+                const bool memoryOpen = ImGui::BeginTabItem("Memory Features");
+                DecorateTab("Memory Features", memoryOpen);
+                if (memoryOpen)
+                {
+                    Ra2Overlay::InfiniteHealth::RenderConfig();
+                    Ra2Overlay::InstantBuild::RenderConfig();
+                    Ra2Overlay::VeterancyMax::RenderConfig();
+                    ImGui::Separator();
+                    ImGui::TextWrapped("写操作在联机对局中会导致 desync，全部功能仅限单机使用。");
+                    ImGui::EndTabItem();
+                }
                 ImGui::EndTabBar();
             }
         }
@@ -241,8 +302,11 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
         }
     }
 
-    ImGui::Render();
-    ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+        // ESP 绘制：在 ImGui 本帧绘制数据定稿前写入前景层，随 SwapBuffers 一起上屏。
+        Ra2Overlay::Esp::Render();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Ra2Overlay::UiShell::Shutdown()
