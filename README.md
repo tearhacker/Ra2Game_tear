@@ -5,7 +5,7 @@
 
 [![Platform](https://img.shields.io/badge/platform-Win32%20x86-blue)](https://github.com/tearhacker/Ra2Game_tear)
 [![Language](https://img.shields.io/badge/language-C%2B%2B17-orange)](https://github.com/tearhacker/Ra2Game_tear)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/tearhacker/Ra2Game_tear)
+[![License](https://img.shields.io/badge/license-GPL--3.0-orange)](https://github.com/tearhacker/Ra2Game_tear/blob/main/LICENSE)
 
 ## 简介 (Introduction)
 
@@ -132,3 +132,16 @@ Ra2Game_tear/
 ## 免责声明 (Disclaimer)
 
 本工具仅用于学习与研究目的（游戏逆向、内存操作、图形覆盖层技术）。使用本工具产生的任何后果由使用者自行承担。请勿在联机对战中使用本工具的任何写入类功能。
+
+## 开源许可 (License)
+
+本项目采用 **GNU GPL v3.0**（GNU 通用公共许可证第三版）授权，详见 [LICENSE](LICENSE)。
+
+**核心约定（copyleft 传染性许可）：**
+
+- 任何人可以自由使用、复制、修改、分发本源码；
+- **但任何基于本源码的衍生作品（含修改版、二次开发、集成的项目）必须以 GPL 许可证开源发布**，并保留版权声明；
+- 若分发二进制/可执行程序，**必须同时提供对应的完整源代码**（或附上获取源码的书面承诺）；
+- 不遵守上述条款而分发、使用、修改本源码，**视为侵权**，著作权人保留追究法律责任的权利。
+
+> 疑问或商业合作，请通过上方联系方式联系作者。
