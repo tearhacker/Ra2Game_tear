@@ -1,7 +1,10 @@
 # 工作区数据（禁止提交）
 .workbuddy/
 
-# 第三方参考项目（禁止提交）
+# 本地文档 / 归档 / 第三方参考项目（禁止提交 GitHub）
+docs/
+archive/
+分析第三方项目/
 Universal-Dear-ImGui-Hook/
 
 # GL-BaseHook 文档（禁止提交 GitHub）

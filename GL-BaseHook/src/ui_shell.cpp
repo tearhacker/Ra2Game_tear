@@ -26,6 +26,9 @@
 #include "runtime.h"
 #include "ui_shell.h"
 
+#include <shellapi.h>
+#include <cstring>
+
 namespace
 {
     std::atomic_bool g_initialized{ false };
@@ -310,6 +313,64 @@ namespace
         ImGui::PopStyleColor(2);
         return clicked;
     }
+
+    // About 页：在系统浏览器中打开 URL。
+    void OpenUrl(const char* url)
+    {
+        ShellExecuteA(nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL);
+    }
+
+    // About 页：把 QQ 群号复制到剪贴板，方便用户加群。
+    void CopyToClipboard(const char* text)
+    {
+        if (!OpenClipboard(nullptr))
+        {
+            return;
+        }
+        EmptyClipboard();
+
+        const SIZE_T bytes = (std::strlen(text) + 1) * sizeof(char);
+        HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+        if (hMem)
+        {
+            void* const p = GlobalLock(hMem);
+            if (p)
+            {
+                std::memcpy(p, text, bytes);
+                GlobalUnlock(hMem);
+                SetClipboardData(CF_TEXT, hMem);
+            }
+            else
+            {
+                GlobalFree(hMem);
+            }
+        }
+        CloseClipboard();
+    }
+
+    // About 页：可点击的链接行（打开网页 / 复制群号），带悬停手型与提示。
+    void AboutLink(const char* label, const char* action, bool copyMode)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.75f, 0.95f, 1.00f));
+        const bool clicked = ImGui::Selectable(label);
+        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            ImGui::SetTooltip("%s", action);
+        }
+        if (clicked)
+        {
+            if (copyMode)
+            {
+                CopyToClipboard(action);
+            }
+            else
+            {
+                OpenUrl(action);
+            }
+        }
+    }
 }
 
 bool Ra2Overlay::UiShell::Initialize(HWND window, HDC deviceContext, HGLRC renderContext)
@@ -490,6 +551,20 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                     }
                     ImGui::Separator();
                     ImGui::TextWrapped("Write operations cause desync in online matches; all features are for single-player use only.");
+                    ImGui::EndTabItem();
+                }
+
+                const bool aboutOpen = ImGui::BeginTabItem("About");
+                DecorateTab("About", aboutOpen);
+                if (aboutOpen)
+                {
+                    ImGui::TextWrapped("Ra2Overlay - RA2: Yuri's Revenge (YR 1.001) single-player trainer overlay. All features are for offline use only.");
+                    ImGui::Separator();
+                    ImGui::TextUnformatted("Author: tearhacker");
+                    ImGui::Separator();
+                    AboutLink("QQ Group: 435539500", "435539500", true);
+                    AboutLink("Website: http://teargamestorem.top/", "http://teargamestorem.top/", false);
+                    AboutLink("GitHub: https://github.com/tearhacker/Ra2Game_tear", "https://github.com/tearhacker/Ra2Game_tear", false);
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
