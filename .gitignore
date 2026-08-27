@@ -13,3 +13,11 @@ GL-BaseHook/**/*.txt
 
 # MSVC 编译产物
 *.pdb
+
+# 启动器本地配置（含本机游戏路径，不提交）与打包产物
+starter_config.json
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc
