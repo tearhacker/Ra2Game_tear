@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 
-#include "feature_instant_build.h"
+#include "feature_fast_mining.h"
 
 #include "game_hooks.h"
 #include "log.h"
 
 #include <YRPP.h>
 
-namespace Ra2Overlay::InstantBuild
+namespace Ra2Overlay::FastMining
 {
     std::atomic<bool> Enabled{ false };
 
@@ -26,25 +26,21 @@ namespace Ra2Overlay::InstantBuild
                 return;
             }
 
-            auto& factories = *yrpp::FactoryClass::Array;
-            for (int i = 0; i < factories.Count; ++i)
+            auto& buildings = *yrpp::BuildingClass::Array;
+            for (int i = 0; i < buildings.Count; ++i)
             {
-                yrpp::FactoryClass* const factory = factories[i];
-                if (!factory)
+                yrpp::BuildingClass* const building = buildings[i];
+                if (!building || !building->IsAlive || building->InLimbo)
                 {
                     continue;
                 }
-                if (factory->Owner != player)
-                {
-                    continue;
-                }
-                if (factory->OnHold || factory->IsSuspended)
+                if (building->GetOwningHouse() != player)
                 {
                     continue;
                 }
 
-                factory->Production.Timer.TimeLeft = 0;
-                factory->Production.HasChanged = true;
+                // 只管在产的（CashProductionTimer 正在计数）；TimeLeft=0 下次更新即出产。
+                building->CashProductionTimer.TimeLeft = 0;
             }
         }
     }
@@ -54,20 +50,20 @@ namespace Ra2Overlay::InstantBuild
         const bool added = GameHooks::RegisterFrameCallback(&Tick);
         if (added)
         {
-            Log::Write("InstantBuild: frame callback registered");
+            Log::Write("FastMining: frame callback registered");
         }
     }
 
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Instant Build (SP)", &enabled))
+        if (ImGui::Checkbox("Instant Mining (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Resets the current production timer of friendly factories every logic frame, completing production instantly.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("Resets the production timer of friendly ore refineries every logic frame for fast credit output.\nWrite operations cause desync in online matches; single-player only.");
         }
     }
 }

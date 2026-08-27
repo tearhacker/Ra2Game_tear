@@ -1,12 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include <atomic>
 
-// 开图（单机功能）：
-// 勾选后每逻辑帧对当前玩家重新揭图（MapClass::Reveal），维持"永久开图"。
+// 瞬转炮塔（单机功能）：
+// 每逻辑帧将本方单位的主炮塔/枪管朝向锁定到鼠标所在方向（FacingClass::SetCurrent）。
 // 写操作在联机对局中会导致 desync，仅在单机可用。
 
-namespace Ra2Overlay::RevealMap
+namespace Ra2Overlay::InstantTurn
 {
     extern std::atomic<bool> Enabled;   // UI 线程写、逻辑线程读，必须原子
 

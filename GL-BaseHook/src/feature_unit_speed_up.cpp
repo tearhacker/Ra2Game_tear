@@ -1,13 +1,14 @@
 ﻿#include "pch.h"
 
-#include "feature_infinite_health.h"
+#include "feature_unit_speed_up.h"
 
 #include "game_hooks.h"
 #include "log.h"
 
 #include <YRPP.h>
+#include <Helpers/Cast.h>
 
-namespace Ra2Overlay::InfiniteHealth
+namespace Ra2Overlay::UnitSpeedUp
 {
     std::atomic<bool> Enabled{ false };
 
@@ -39,16 +40,28 @@ namespace Ra2Overlay::InfiniteHealth
                     continue;
                 }
 
-                const yrpp::ObjectTypeClass* const type = techno->GetType();
-                if (!type)
+                // 建筑没有 SpeedMultiplier，abstract_cast<FootClass*> 对非
+                // Foot 派生（建筑/步兵?）返回 nullptr。仅对移动单位提速。
+                yrpp::FootClass* const foot = yrpp::abstract_cast<yrpp::FootClass*>(techno);
+                if (!foot)
                 {
                     continue;
                 }
 
-                // 只在不满时补满：避免把 Health > Strength 的异常状态单位写小。
-                if (techno->Health < type->Strength)
+                switch (techno->WhatAmI())
                 {
-                    techno->Health = type->Strength;
+                case yrpp::AbstractType::Infantry:
+                    // 步兵倍率过高会进入"抽搐"状态，参考工程经验值 2.0。
+                    foot->SpeedMultiplier = 2.0;
+                    break;
+                case yrpp::AbstractType::Aircraft:
+                    // 飞行器参考工程未处理，取保守值 3.0。
+                    foot->SpeedMultiplier = 3.0;
+                    break;
+                default:
+                    // 载具 / 舰船：5.0。
+                    foot->SpeedMultiplier = 5.0;
+                    break;
                 }
             }
         }
@@ -59,20 +72,20 @@ namespace Ra2Overlay::InfiniteHealth
         const bool added = GameHooks::RegisterFrameCallback(&Tick);
         if (added)
         {
-            Log::Write("InfiniteHealth: frame callback registered");
+            Log::Write("UnitSpeedUp: frame callback registered");
         }
     }
 
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Infinite Health (SP)", &enabled))
+        if (ImGui::Checkbox("Speed Up All Units (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Refills the health of all friendly living units and buildings every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("Boosts all friendly mobile units every logic frame: vehicles 5x, infantry 2x, aircraft 3x.\nWrite operations cause desync in online matches; single-player only.");
         }
     }
 }

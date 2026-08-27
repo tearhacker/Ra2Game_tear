@@ -9,62 +9,51 @@
 // 只用字段 / 虚函数 / 内联方法，不调用任何 RX 自由函数。
 #include <YRPP.h>
 
-namespace
+namespace Ra2Overlay::RevealMap
 {
-    std::atomic_bool g_revealed{ false };
-    std::atomic_bool g_pending{ false };
+    std::atomic<bool> Enabled{ false };
 
-    void ExecuteRevealAllMap()
+    namespace
     {
-        g_pending.store(false, std::memory_order_release);
-
-        yrpp::MapClass* const map = yrpp::MapClass::Instance;
-        yrpp::HouseClass* const player = yrpp::HouseClass::CurrentPlayer;
-        if (!map || !player)
+        void Tick()
         {
-            Ra2Overlay::Log::Write("RevealMap: skipped, map or current player not ready");
-            return;
+            if (!Enabled.load(std::memory_order_relaxed))
+            {
+                return;
+            }
+
+            yrpp::MapClass* const map = yrpp::MapClass::Instance;
+            yrpp::HouseClass* const player = yrpp::HouseClass::CurrentPlayer;
+            if (!map || !player)
+            {
+                return;
+            }
+
+            // 每逻辑帧重新揭图，维持"永久开图"。
+            // 一次性揭图会被游戏的迷雾恢复逻辑覆盖，故需持续调用。
+            map->Reveal(player);
         }
-
-        // MapClass::Reveal(0x577D90)：在逻辑线程清除当前玩家全图黑幕/迷雾。
-        map->Reveal(player);
-        g_revealed.store(true, std::memory_order_release);
-        Ra2Overlay::Log::Write("RevealMap: full map revealed for current player");
-    }
-}
-
-void Ra2Overlay::RevealMap::RequestRevealAllMap()
-{
-    if (g_revealed.load(std::memory_order_acquire))
-    {
-        return;
-    }
-    if (g_pending.exchange(true, std::memory_order_acq_rel))
-    {
-        return;
     }
 
-    GameHooks::Submit(ExecuteRevealAllMap);
-    Log::Write("RevealMap: request queued to logic thread");
-}
-
-void Ra2Overlay::RevealMap::RenderConfig()
-{
-    if (g_revealed.load(std::memory_order_acquire))
+    void Register()
     {
-        ImGui::TextUnformatted("Map fully revealed for the current player.");
-        return;
+        const bool added = GameHooks::RegisterFrameCallback(&Tick);
+        if (added)
+        {
+            Log::Write("RevealMap: per-frame callback registered");
+        }
     }
 
-    if (g_pending.load(std::memory_order_acquire))
+    void RenderConfig()
     {
-        ImGui::TextUnformatted("Reveal pending - will apply on the next logic frame...");
-        return;
-    }
-
-    ImGui::TextWrapped("Clears shroud and fog of war for the current player across the whole map. One-shot for this session.");
-    if (ImGui::Button("Reveal entire map"))
-    {
-        RequestRevealAllMap();
+        bool enabled = Enabled.load(std::memory_order_relaxed);
+        if (ImGui::Checkbox("Reveal Map (SP)", &enabled))
+        {
+            Enabled.store(enabled, std::memory_order_relaxed);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Reveals the entire map for the current player every logic frame, keeping fog and shroud cleared permanently.\nWrite operations cause desync in online matches; single-player only.");
+        }
     }
 }

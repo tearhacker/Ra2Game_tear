@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 
-#include "feature_instant_build.h"
+#include "feature_unlimited_superweapon.h"
 
 #include "game_hooks.h"
 #include "log.h"
 
 #include <YRPP.h>
 
-namespace Ra2Overlay::InstantBuild
+namespace Ra2Overlay::UnlimitedSuperweapon
 {
     std::atomic<bool> Enabled{ false };
 
@@ -26,25 +26,21 @@ namespace Ra2Overlay::InstantBuild
                 return;
             }
 
-            auto& factories = *yrpp::FactoryClass::Array;
-            for (int i = 0; i < factories.Count; ++i)
+            auto& supers = *yrpp::SuperClass::Array;
+            for (int i = 0; i < supers.Count; ++i)
             {
-                yrpp::FactoryClass* const factory = factories[i];
-                if (!factory)
+                yrpp::SuperClass* const super = supers[i];
+                if (!super)
                 {
                     continue;
                 }
-                if (factory->Owner != player)
-                {
-                    continue;
-                }
-                if (factory->OnHold || factory->IsSuspended)
+                if (super->Owner != player)
                 {
                     continue;
                 }
 
-                factory->Production.Timer.TimeLeft = 0;
-                factory->Production.HasChanged = true;
+                super->IsCharged = true;
+                super->RechargeTimer.TimeLeft = 0;
             }
         }
     }
@@ -54,20 +50,20 @@ namespace Ra2Overlay::InstantBuild
         const bool added = GameHooks::RegisterFrameCallback(&Tick);
         if (added)
         {
-            Log::Write("InstantBuild: frame callback registered");
+            Log::Write("UnlimitedSuperweapon: frame callback registered");
         }
     }
 
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Instant Build (SP)", &enabled))
+        if (ImGui::Checkbox("Unlimited Superweapons (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Resets the current production timer of friendly factories every logic frame, completing production instantly.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("Fully charges all friendly superweapons every logic frame, ready to fire anytime.\nWrite operations cause desync in online matches; single-player only.");
         }
     }
 }

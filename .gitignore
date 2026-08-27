@@ -1,1 +1,12 @@
+# 工作区数据（禁止提交）
+.workbuddy/
+
+# 第三方参考项目（禁止提交）
 Universal-Dear-ImGui-Hook/
+
+# GL-BaseHook 文档（禁止提交 GitHub）
+GL-BaseHook/**/*.md
+GL-BaseHook/**/*.txt
+
+# MSVC 编译产物
+*.pdb

@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 
-#include "feature_veterancy_max.h"
+#include "feature_unlimited_firepower.h"
 
 #include "game_hooks.h"
 #include "log.h"
 
 #include <YRPP.h>
 
-namespace Ra2Overlay::VeterancyMax
+namespace Ra2Overlay::UnlimitedFirepower
 {
     std::atomic<bool> Enabled{ false };
 
@@ -39,10 +39,19 @@ namespace Ra2Overlay::VeterancyMax
                     continue;
                 }
 
-                // 已精英则跳过：避免对建筑等不可升级对象每帧无谓写入。
-                if (!techno->Veterancy.IsElite())
+                const yrpp::TechnoTypeClass* const type = techno->GetTechnoType();
+                if (!type)
                 {
-                    techno->Veterancy.SetElite();
+                    continue;
+                }
+
+                // 装填清零：所有可开火对象都走 ReloadTimer。
+                techno->ReloadTimer.TimeLeft = 0;
+
+                // 弹药补满：只有类型带弹夹上限（Ammo>0）的单位才消耗弹药。
+                if (type->Ammo > 0 && techno->Ammo < type->Ammo)
+                {
+                    techno->Ammo = type->Ammo;
                 }
             }
         }
@@ -53,20 +62,20 @@ namespace Ra2Overlay::VeterancyMax
         const bool added = GameHooks::RegisterFrameCallback(&Tick);
         if (added)
         {
-            Log::Write("VeterancyMax: frame callback registered");
+            Log::Write("UnlimitedFirepower: frame callback registered");
         }
     }
 
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Max Veterancy (SP)", &enabled))
+        if (ImGui::Checkbox("Unlimited Firepower (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Caps the rank/experience of all friendly living units and buildings to Elite every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("Clears the reload timer and reloads ammo for all friendly units every logic frame, removing fire cooldown.\nWrite operations cause desync in online matches; single-player only.");
         }
     }
 }

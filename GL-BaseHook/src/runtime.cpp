@@ -3,6 +3,21 @@
 #include "feature_infinite_health.h"
 #include "feature_instant_build.h"
 #include "feature_veterancy_max.h"
+#include "feature_unlimited_money.h"
+#include "feature_unlimited_power.h"
+#include "feature_fast_mining.h"
+#include "feature_unlimited_superweapon.h"
+#include "feature_unlimited_firepower.h"
+#include "feature_instant_turn.h"
+#include "feature_auto_repair.h"
+#include "feature_speed_control.h"
+#include "feature_reveal_map.h"
+#include "feature_build_everywhere.h"
+#include "feature_unlimit_tech.h"
+#include "feature_range_max.h"
+#include "feature_force_fire.h"
+#include "feature_unit_speed_up.h"
+#include "memory_hook.h"
 #include "game_hooks.h"
 #include "log.h"
 #include "render_hook.h"
@@ -60,6 +75,20 @@ DWORD WINAPI Ra2Overlay::Runtime::WorkerThread(void* moduleParameter)
     Ra2Overlay::InfiniteHealth::Register();
     Ra2Overlay::InstantBuild::Register();
     Ra2Overlay::VeterancyMax::Register();
+    Ra2Overlay::UnlimitedMoney::Register();
+    Ra2Overlay::UnlimitedPower::Register();
+    Ra2Overlay::FastMining::Register();
+    Ra2Overlay::UnlimitedSuperweapon::Register();
+    Ra2Overlay::UnlimitedFirepower::Register();
+    Ra2Overlay::InstantTurn::Register();
+    Ra2Overlay::AutoRepair::Register();
+    Ra2Overlay::SpeedControl::Register();
+    Ra2Overlay::RevealMap::Register();
+    Ra2Overlay::BuildEveryWhere::Register();
+    Ra2Overlay::UnlimitTech::Register();
+    Ra2Overlay::RangeMax::Register();
+    Ra2Overlay::ForceFire::Register();
+    Ra2Overlay::UnitSpeedUp::Register();
 
     while (WaitForSingleObject(g_shutdownEvent, 100) == WAIT_TIMEOUT)
     {
@@ -79,6 +108,11 @@ DWORD WINAPI Ra2Overlay::Runtime::WorkerThread(void* moduleParameter)
     }
 
     GameHooks::Shutdown();
+
+    // 还原所有 JMP 补丁钩子（随处建造/科技全开/射程/强制命中），
+    // 确保卸载后游戏代码完全恢复原状。
+    MemHook::RemoveAll();
+
     RenderHook::Shutdown();
     Log::Write("Hook removed; unloading module");
     Log::Shutdown();
