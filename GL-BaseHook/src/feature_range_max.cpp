@@ -68,13 +68,13 @@ namespace Ra2Overlay::RangeMax
     void RenderConfig()
     {
         bool on = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Max Range (SP)", &on))
+        if (ImGui::Checkbox("最大射程 (SP)", &on))
         {
             SetEnabled(on);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces the weapon range of friendly units to 0xF900, effectively full-map reach.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("将己方单位的武器射程强制设为 0xF900，相当于全图攻击范围。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

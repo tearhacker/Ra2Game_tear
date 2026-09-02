@@ -66,13 +66,13 @@ namespace Ra2Overlay::InfiniteHealth
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Infinite Health (SP)", &enabled))
+        if (ImGui::Checkbox("无限生命 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Refills the health of all friendly living units and buildings every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧将己方所有存活单位与建筑的血量补满。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

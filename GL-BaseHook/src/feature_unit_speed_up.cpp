@@ -79,13 +79,13 @@ namespace Ra2Overlay::UnitSpeedUp
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Speed Up All Units (SP)", &enabled))
+        if (ImGui::Checkbox("单位加速 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Boosts all friendly mobile units every logic frame: vehicles 5x, infantry 2x, aircraft 3x.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧提升己方所有移动单位速度：载具 5倍、步兵 2倍、飞行器 3倍。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

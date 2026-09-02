@@ -47,13 +47,13 @@ namespace Ra2Overlay::RevealMap
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Reveal Map (SP)", &enabled))
+        if (ImGui::Checkbox("显示全图 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Reveals the entire map for the current player every logic frame, keeping fog and shroud cleared permanently.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧为当前玩家揭开全图，永久清除战争迷雾与黑幕。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

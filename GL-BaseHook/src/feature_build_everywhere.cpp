@@ -84,13 +84,13 @@ namespace Ra2Overlay::BuildEveryWhere
     void RenderConfig()
     {
         bool on = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Build Everywhere (SP)", &on))
+        if (ImGui::Checkbox("随处建造 (SP)", &on))
         {
             SetEnabled(on);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces placement checks to pass, letting you build on any terrain or water.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("强制通过放置校验，可在任意地形或水域建造。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

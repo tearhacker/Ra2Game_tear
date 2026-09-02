@@ -87,13 +87,13 @@ namespace
 
 void Ra2Overlay::LaunchNuke::RenderConfig()
 {
-    ImGui::TextWrapped("Launches a nuke at the grid cell under the cursor (requires the current player to own the Nuclear Missile superweapon). Single trigger.");
-    if (ImGui::Button("Launch Nuke (At Cursor)"))
+    ImGui::TextWrapped("向光标所在的地图格子发射核弹（需当前玩家拥有核弹超级武器）。单次触发。");
+    if (ImGui::Button("发射核弹（光标位置）"))
     {
         GameHooks::Submit(ExecuteLaunchNuke);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("Write operations cause desync in online matches; single-player only.");
+        ImGui::SetTooltip("写入操作会导致联机对战同步失败；仅供单人模式使用。");
     }
 }

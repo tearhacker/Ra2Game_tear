@@ -298,7 +298,7 @@ namespace
             char hint[96]{};
             sprintf_s(
                 hint,
-                selected ? "Current page: %s" : "Click to open %s",
+                selected ? "当前页面：%s" : "点击打开 %s",
                 label);
             DrawHoverFeedback(IM_COL32(255, 194, 66, 255), hint);
         }
@@ -309,7 +309,7 @@ namespace
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.62f, 0.12f, 0.12f, 1.00f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.86f, 0.18f, 0.14f, 1.00f));
         const bool clicked = ImGui::Button(label);
-        DrawHoverFeedback(IM_COL32(255, 86, 72, 255), "Click to unload overlay");
+        DrawHoverFeedback(IM_COL32(255, 86, 72, 255), "点击卸载覆盖层");
         ImGui::PopStyleColor(2);
         return clicked;
     }
@@ -434,13 +434,13 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
         {
             if (ImGui::BeginTabBar("MainTabs"))
             {
-                const bool statusOpen = ImGui::BeginTabItem("Status");
-                DecorateTab("Status", statusOpen);
+                const bool statusOpen = ImGui::BeginTabItem("状态");
+                DecorateTab("状态", statusOpen);
                 if (statusOpen)
                 {
                     const Diagnostics::Snapshot& info = Diagnostics::Get();
                     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-                    ImGui::Text("Client: %d x %d", info.clientWidth, info.clientHeight);
+                    ImGui::Text("客户端: %d x %d", info.clientWidth, info.clientHeight);
                     ImGui::Text("HWND: 0x%p", info.window);
                     ImGui::Text("HDC: 0x%p", info.deviceContext);
                     ImGui::Text("HGLRC: 0x%p", info.renderContext);
@@ -451,15 +451,15 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                     ImGui::Separator();
                     ImGui::TextUnformatted("Hook: GDI32!SwapBuffers");
                     ImGui::TextUnformatted("Build: Win32/x86, VS2022 v143");
-                    if (DangerousButton("Unload overlay"))
+                    if (DangerousButton("卸载覆盖层"))
                     {
                         Runtime::RequestShutdown();
                     }
                     ImGui::EndTabItem();
                 }
 
-                const bool logOpen = ImGui::BeginTabItem("Log");
-                DecorateTab("Log", logOpen);
+                const bool logOpen = ImGui::BeginTabItem("日志");
+                DecorateTab("日志", logOpen);
                 if (logOpen)
                 {
                     const std::vector<std::string> lines = Log::Snapshot();
@@ -476,40 +476,34 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                     ImGui::EndTabItem();
                 }
 
-                const bool configurationOpen = ImGui::BeginTabItem("Configuration");
-                DecorateTab("Configuration", configurationOpen);
+                const bool configurationOpen = ImGui::BeginTabItem("设置");
+                DecorateTab("设置", configurationOpen);
                 if (configurationOpen)
                 {
-                    ImGui::TextUnformatted("Insert: show or hide overlay");
-                    ImGui::TextUnformatted("End: unload overlay");
-                    ImGui::TextUnformatted("Renderer backend: OpenGL2");
+                    ImGui::TextUnformatted("Insert：显示/隐藏覆盖层");
+                    ImGui::TextUnformatted("End：卸载覆盖层");
+                    ImGui::TextUnformatted("渲染后端：OpenGL2");
                     ImGui::EndTabItem();
                 }
 
-                const bool espOpen = ImGui::BeginTabItem("ESP");
-                DecorateTab("ESP", espOpen);
+                const bool espOpen = ImGui::BeginTabItem("透视");
+                DecorateTab("透视", espOpen);
                 if (espOpen)
                 {
                     Ra2Overlay::Esp::RenderConfig();
-                    ImGui::EndTabItem();
-                }
-
-                const bool revealMapOpen = ImGui::BeginTabItem("Reveal Map");
-                DecorateTab("Reveal Map", revealMapOpen);
-                if (revealMapOpen)
-                {
+                    ImGui::Separator();
                     Ra2Overlay::RevealMap::RenderConfig();
                     ImGui::EndTabItem();
                 }
 
-                const bool memoryOpen = ImGui::BeginTabItem("Memory Features");
-                DecorateTab("Memory Features", memoryOpen);
+                const bool memoryOpen = ImGui::BeginTabItem("内存功能");
+                DecorateTab("内存功能", memoryOpen);
                 if (memoryOpen)
                 {
                     if (ImGui::BeginTabBar("MemorySubTabs"))
                     {
                         // Economy
-                        if (ImGui::BeginTabItem("Economy"))
+                        if (ImGui::BeginTabItem("经济"))
                         {
                             Ra2Overlay::UnlimitedMoney::RenderConfig();
                             Ra2Overlay::UnlimitedPower::RenderConfig();
@@ -520,14 +514,14 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                             ImGui::EndTabItem();
                         }
                         // Superweapons
-                        if (ImGui::BeginTabItem("Superweapons"))
+                        if (ImGui::BeginTabItem("超级武器"))
                         {
                             Ra2Overlay::UnlimitedSuperweapon::RenderConfig();
                             Ra2Overlay::LaunchNuke::RenderConfig();
                             ImGui::EndTabItem();
                         }
                         // Combat
-                        if (ImGui::BeginTabItem("Combat"))
+                        if (ImGui::BeginTabItem("战斗"))
                         {
                             Ra2Overlay::UnlimitedFirepower::RenderConfig();
                             Ra2Overlay::InstantTurn::RenderConfig();
@@ -540,7 +534,7 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                             ImGui::EndTabItem();
                         }
                         // Strategy
-                        if (ImGui::BeginTabItem("Strategy"))
+                        if (ImGui::BeginTabItem("战略"))
                         {
                             Ra2Overlay::SpeedControl::RenderConfig();
                             Ra2Overlay::IamWinner::RenderConfig();
@@ -550,21 +544,21 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                         ImGui::EndTabBar();
                     }
                     ImGui::Separator();
-                    ImGui::TextWrapped("Write operations cause desync in online matches; all features are for single-player use only.");
+                    ImGui::TextWrapped("写入操作会导致联机对战同步失败；所有功能仅供单人模式使用。");
                     ImGui::EndTabItem();
                 }
 
-                const bool aboutOpen = ImGui::BeginTabItem("About");
-                DecorateTab("About", aboutOpen);
+                const bool aboutOpen = ImGui::BeginTabItem("关于");
+                DecorateTab("关于", aboutOpen);
                 if (aboutOpen)
                 {
-                    ImGui::TextWrapped("Ra2Overlay - RA2: Yuri's Revenge (YR 1.001) single-player trainer overlay. All features are for offline use only.");
+                    ImGui::TextWrapped("Ra2Overlay - 红警2尤里复仇(YR 1.001) 单人训练覆盖层。所有功能仅供离线使用。");
                     ImGui::Separator();
-                    ImGui::TextUnformatted("Author: tearhacker");
+                    ImGui::TextUnformatted("作者：tearhacker");
                     ImGui::Separator();
-                    AboutLink("QQ Group: 435539500", "435539500", true);
-                    AboutLink("Website: http://teargamestorem.top/", "http://teargamestorem.top/", false);
-                    AboutLink("GitHub: https://github.com/tearhacker/Ra2Game_tear", "https://github.com/tearhacker/Ra2Game_tear", false);
+                    AboutLink("QQ群：435539500", "435539500", true);
+                    AboutLink("网站：http://teargamestorem.top/", "http://teargamestorem.top/", false);
+                    AboutLink("GitHub：https://github.com/tearhacker/Ra2Game_tear", "https://github.com/tearhacker/Ra2Game_tear", false);
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();

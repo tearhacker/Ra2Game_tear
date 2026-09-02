@@ -45,13 +45,13 @@ namespace Ra2Overlay::UnlimitedMoney
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Unlimited Money (SP)", &enabled))
+        if (ImGui::Checkbox("无限金钱 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Adds %d credits to the current player every logic frame.\nWrite operations cause desync in online matches; single-player only.", kPerFrameAmount);
+            ImGui::SetTooltip("每逻辑帧为当前玩家增加 %d 资金。\n写入操作会导致联机对战同步失败；仅供单人模式使用。", kPerFrameAmount);
         }
     }
 }

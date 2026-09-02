@@ -80,13 +80,13 @@ namespace Ra2Overlay::AutoRepair
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Auto-Repair (SP)", &enabled))
+        if (ImGui::Checkbox("自动维修 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces the repair progress of damaged friendly buildings to expire immediately every logic frame, speeding up healing.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧强制受损的己方建筑立即完成维修进度，加速回血。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

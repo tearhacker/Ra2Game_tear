@@ -95,13 +95,13 @@ namespace Ra2Overlay::InstantTurn
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Instant Turret Turn (SP)", &enabled))
+        if (ImGui::Checkbox("炮塔瞬转 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Snaps friendly units' turrets/barrels to face the cursor every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧将己方单位的炮塔/炮管瞬转朝向光标。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

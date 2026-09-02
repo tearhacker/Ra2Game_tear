@@ -1,6 +1,7 @@
 @echo off
 setlocal
 call "D:\ProgramerDevelop\VS2026\SDK\VC\Auxiliary\Build\vcvarsall.bat" x86
-if errorlevel 1 (echo [ERR] vcvarsall failed & exit /b 1)
-"D:\ProgramerDevelop\VS2026\SDK\MSBuild\Current\Bin\MSBuild.exe" "Ra2Overlay.sln" /noautoresponse /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v145 /p:WindowsTargetPlatformVersion=10.0.26100.0 /m /v:minimal
+if errorlevel 1 (echo [ERR] vcvarsall failed & pause & exit /b 1)
+"D:\ProgramerDevelop\VS2026\SDK\MSBuild\Current\Bin\MSBuild.exe" "Ra2Overlay.sln" /noautoresponse /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v145 /p:WindowsTargetPlatformVersion=10.0.26100.0 /m /v:minimal /p:AdditionalOptions="/utf-8 /wd4100 /wd4458 /wd4324 /wd4731 /wd4740"
 echo [EXIT] %ERRORLEVEL%
+pause

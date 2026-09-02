@@ -113,14 +113,13 @@ namespace Ra2Overlay::Esp
 
     void RenderConfig()
     {
-        ImGui::Checkbox("Enable ESP", &Enabled);
-        ImGui::Checkbox("Show health bar", &ShowHealth);
-        ImGui::Checkbox("Show name", &ShowName);
-        ImGui::Checkbox("Enemies only", &EnemyOnly);
-        ImGui::SliderFloat("Box size", &BoxSize, 10.0f, 60.0f);
+        ImGui::Checkbox("启用透视", &Enabled);
+        ImGui::Checkbox("显示血条", &ShowHealth);
+        ImGui::Checkbox("显示名称", &ShowName);
+        ImGui::Checkbox("仅显示敌人", &EnemyOnly);
+        ImGui::SliderFloat("方框大小", &BoxSize, 10.0f, 60.0f);
         ImGui::Separator();
         ImGui::TextWrapped(
-            "ESP is read-only drawing (never writes game state) -> safe in multiplayer. "
-            "See anti-cheat doc S9.");
+            "透视为只读绘制（永不写入游戏状态），联机安全。详见反作弊文档 S9。");
     }
 }

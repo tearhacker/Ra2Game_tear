@@ -57,13 +57,13 @@ namespace Ra2Overlay::FastMining
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Instant Mining (SP)", &enabled))
+        if (ImGui::Checkbox("极速采矿 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Resets the production timer of friendly ore refineries every logic frame for fast credit output.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧重置己方矿厂的采集计时器，实现资金快速产出。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

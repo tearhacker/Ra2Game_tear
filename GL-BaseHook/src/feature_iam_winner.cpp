@@ -36,23 +36,23 @@ namespace
 
 void Ra2Overlay::IamWinner::RenderConfig()
 {
-    ImGui::TextWrapped("Ends the match immediately. Single trigger.");
-    if (ImGui::Button("I Win"))
+    ImGui::TextWrapped("立即结束本局对战。单次触发。");
+    if (ImGui::Button("我胜利"))
     {
         GameHooks::Submit(ExecuteWin);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("Write operations cause desync in online matches; single-player only.");
+        ImGui::SetTooltip("写入操作会导致联机对战同步失败；仅供单人模式使用。");
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Make AI Lose"))
+    if (ImGui::Button("让AI失败"))
     {
         GameHooks::Submit(ExecuteLose);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("Write operations cause desync in online matches; single-player only.");
+        ImGui::SetTooltip("写入操作会导致联机对战同步失败；仅供单人模式使用。");
     }
 }

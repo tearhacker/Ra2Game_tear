@@ -63,13 +63,13 @@ namespace Ra2Overlay::UnlimitTech
     void RenderConfig()
     {
         bool on = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Unlock All Tech (SP)", &on))
+        if (ImGui::Checkbox("解锁全科技 (SP)", &on))
         {
             SetEnabled(on);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces HouseClass::CanBuild to return allowed, unlocking all buildings/units.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("强制 HouseClass::CanBuild 返回允许，解锁所有建筑/单位。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

@@ -57,13 +57,13 @@ namespace Ra2Overlay::UnlimitedSuperweapon
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Unlimited Superweapons (SP)", &enabled))
+        if (ImGui::Checkbox("无限超武 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Fully charges all friendly superweapons every logic frame, ready to fire anytime.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧将己方所有超级武器充满，随时可发射。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

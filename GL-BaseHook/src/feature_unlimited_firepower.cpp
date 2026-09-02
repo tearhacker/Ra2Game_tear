@@ -69,13 +69,13 @@ namespace Ra2Overlay::UnlimitedFirepower
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Unlimited Firepower (SP)", &enabled))
+        if (ImGui::Checkbox("无限火力 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Clears the reload timer and reloads ammo for all friendly units every logic frame, removing fire cooldown.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧清空己方所有单位的装填计时器并补满弹药，消除开火冷却。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

@@ -52,13 +52,13 @@ namespace
 
 void Ra2Overlay::DeleteUnit::RenderConfig()
 {
-    ImGui::TextWrapped("Removes the currently selected friendly units (including buildings) from the battlefield. Single trigger.");
-    if (ImGui::Button("Remove Selected Units"))
+    ImGui::TextWrapped("将当前选中的己方单位（含建筑）从战场移除。单次触发。");
+    if (ImGui::Button("移除选中单位"))
     {
         GameHooks::Submit(ExecuteDeleteSelected);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("Write operations cause desync in online matches; single-player only.");
+        ImGui::SetTooltip("写入操作会导致联机对战同步失败；仅供单人模式使用。");
     }
 }

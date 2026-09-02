@@ -61,13 +61,13 @@ namespace Ra2Overlay::InstantBuild
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Instant Build (SP)", &enabled))
+        if (ImGui::Checkbox("秒造建筑 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Resets the current production timer of friendly factories every logic frame, completing production instantly.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧将己方工厂当前生产计时器归零，瞬间完成生产。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

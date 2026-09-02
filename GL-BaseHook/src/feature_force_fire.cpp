@@ -70,13 +70,13 @@ namespace Ra2Overlay::ForceFire
     void RenderConfig()
     {
         bool on = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Force Fire (SP)", &on))
+        if (ImGui::Checkbox("强制命中 (SP)", &on))
         {
             SetEnabled(on);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces friendly units' shots to hit, bypassing distance/hit checks.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("强制己方单位的射击命中，跳过距离/命中判定。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }

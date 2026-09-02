@@ -64,23 +64,23 @@ namespace Ra2Overlay::SpeedControl
     void RenderConfig()
     {
         bool paused = PauseEnabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Pause Game (SP)", &paused))
+        if (ImGui::Checkbox("暂停游戏 (SP)", &paused))
         {
             PauseEnabled.store(paused, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Forces the paused state every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧强制保持暂停状态。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
 
         int speed = GameSpeed.load(std::memory_order_relaxed);
-        if (ImGui::SliderInt("Game Speed (SP)", &speed, kMinSpeed, kMaxSpeed))
+        if (ImGui::SliderInt("游戏速度 (SP)", &speed, kMinSpeed, kMaxSpeed))
         {
             GameSpeed.store(speed, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("0 = slowest, 5 = fastest. Single-player only.");
+            ImGui::SetTooltip("0 = 最慢，5 = 最快。仅供单人模式使用。");
         }
     }
 }

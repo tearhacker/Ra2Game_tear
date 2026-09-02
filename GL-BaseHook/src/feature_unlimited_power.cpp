@@ -44,13 +44,13 @@ namespace Ra2Overlay::UnlimitedPower
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Unlimited Power (SP)", &enabled))
+        if (ImGui::Checkbox("无限电力 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Raises the current player's power output to %d every logic frame, eliminating power shortage.\nWrite operations cause desync in online matches; single-player only.", kPowerOutput);
+            ImGui::SetTooltip("每逻辑帧将当前玩家电力产量提升至 %d，消除电力短缺。\n写入操作会导致联机对战同步失败；仅供单人模式使用。", kPowerOutput);
         }
     }
 }

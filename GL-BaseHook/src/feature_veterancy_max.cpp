@@ -60,13 +60,13 @@ namespace Ra2Overlay::VeterancyMax
     void RenderConfig()
     {
         bool enabled = Enabled.load(std::memory_order_relaxed);
-        if (ImGui::Checkbox("Max Veterancy (SP)", &enabled))
+        if (ImGui::Checkbox("满级军衔 (SP)", &enabled))
         {
             Enabled.store(enabled, std::memory_order_relaxed);
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Caps the rank/experience of all friendly living units and buildings to Elite every logic frame.\nWrite operations cause desync in online matches; single-player only.");
+            ImGui::SetTooltip("每逻辑帧将己方所有存活单位与建筑的军衔/经验提升至精英级。\n写入操作会导致联机对战同步失败；仅供单人模式使用。");
         }
     }
 }
