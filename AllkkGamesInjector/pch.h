@@ -1,16 +1,14 @@
 #pragma once
 
 //includes
-#include <iostream>
-#include <fstream>
-#include <filesystem>
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
-#include <limits>
+#include <filesystem>
+#include <fstream>
+#include <mutex>
 #include <sstream>
 #include <thread>
-#include <cwctype>
 
 #ifndef NOMINMAX
 #define NOMINMAX

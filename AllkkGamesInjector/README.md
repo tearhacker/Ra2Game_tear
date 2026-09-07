@@ -1,30 +1,34 @@
-# Potato Injector
-## Info
- A simple GUI for selecting a DLL and displaying Steam/game process status. The former VAC3 patching feature has been removed.
-## Screenshot
-![Screenshot1](https://raw.githubusercontent.com/leo4048111/Potato-Injector/main/screenshots/screenshot1.png)  
-![Screenshot2](https://raw.githubusercontent.com/leo4048111/Potato-Injector/main/screenshots/screenshot2.png)  
-**Basic Menu Layout & Explained**
-## Build Prerequisites
-+ Installed Microsoft Visual Studio 2019+ 
-+ Installed [DirectX Software Development Kit](https://www.microsoft.com/en-us/download/details.aspx?id=6812)
-+ [BlackBone Static Library](https://github.com/DarthTon/Blackbone), build the project into `BlackBone.lib`(Release build) and `BlackBone-d.lib`(Debug build)
-+ Put both .lib files under `$(ProjectDir)\dependency\blackbone\Lib`
-## How this injector works?
-+ This injector uses `blackbone::Process::mmap().MapImage`(which is a widely used manual map implementation) to map dll into target process memory.
-* The former VAC3 patching feature and embedded patch payload are no longer part of the project.
-## How to use?
-+ Put all .dll files in `dlls` folder(automatically created).
-+ Select the dll to inject, make sure CSGO game is up and running, then click `inject` to start injection.
-+ Other labels and controls should be straightforward enough to comprehend.
-## Credits
-+ https://github.com/b1scoito/cozinha_loader From which I stole some readily available mapping and patching functions.
-+ https://github.com/ocornut/imgui
-+ https://github.com/DarthTon/Blackbone
-## Notice
-+ ***Use this injector at your own risk.***
-+ ***Due to my current workload, I haven't been able to actively maintain this injector lately. Would greatly appreciate any PRs for bug fixes or new features. Contributors are more than welcome!***
-## Update
-+ Compatibility updates, now works on CS2 smoothly...
-+ For legacy CS:GO version, get it from Release v1.0 Executable(For CS:GO)
-+ Added custom process selection in v3.0
+# Allkk Games Injector
+
+通用的 Win32 (x86) 游戏 DLL 注入器，ImGui 界面，静态链接无依赖。
+
+## 支持的游戏（预设）
+
+| 游戏 | 进程名 |
+| --- | --- |
+| 红警2 尤里复仇 | gamemd.exe |
+| 红警2 | ra2.exe |
+| 魔兽争霸3 | war3.exe |
+| CS 1.6 | hl.exe |
+
+进程名不一致时，可在界面 "Running process" 下拉中选择实际运行中的进程。
+
+## 注入原理
+
+标准 `LoadLibraryW + CreateRemoteThread`：
+
+1. 在本进程内校验 DLL 为 Win32 (x86) PE
+2. 等待目标进程出现（最长 30 秒）
+3. `VirtualAllocEx` + `WriteProcessMemory` 写入 DLL 绝对路径
+4. `CreateRemoteThread` 调用 `kernel32!LoadLibraryW` 加载
+
+## 使用
+
+1. 运行 `build_injector.bat` 编译（VS2026 x86 环境 + Hikari ollvm 混淆，输出 `bin\potatoInjector.exe`；自研代码全量混淆，imgui 用普通 cl 编译）
+2. 把要注入的 x86 DLL 放入 `dlls` 目录（首次运行自动创建）
+3. 启动游戏 → 启动注入器 → 选择 DLL → 点击 Inject
+
+## 注意
+
+- 注入器与游戏必须同为 x86；游戏以管理员运行时，注入器也需以管理员运行
+- 被注入的 DLL 建议静态链接运行库（/MT），不依赖目标机器的 VC 运行库

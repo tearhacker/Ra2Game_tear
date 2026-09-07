@@ -1,6 +1,9 @@
 #pragma once
 #include "utils/utils.hpp"
 
+#include <set>
+#include <tlhelp32.h>
+
 namespace mem
 {
 	struct CompareProc {
@@ -19,14 +22,15 @@ namespace mem
 	inline std::set<std::pair<std::uint32_t, std::wstring>, CompareProc> getProcList() {
 		std::set<std::pair<std::uint32_t, std::wstring>, CompareProc> procList;
 
-		auto hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+		const auto hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+		if (hSnap == INVALID_HANDLE_VALUE) return procList;
 
 		PROCESSENTRY32 e;
 		e.dwSize = sizeof(e);
 
 		if (!Process32First(hSnap, &e)) {
 			CloseHandle(hSnap);
-			return {};
+			return procList;
 		}
 
 		do {

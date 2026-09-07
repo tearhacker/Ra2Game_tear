@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Menu.hpp"
 
 #include <algorithm>
@@ -63,13 +63,21 @@ namespace
 			? ImVec4(0.075f, 0.095f, 0.140f, 1.0f)
 			: ImVec4(0.875f, 0.910f, 0.960f, 1.0f);
 	}
+
+	// ImGui 默认字体仅支持 ASCII，非 ASCII 字符统一替换为 '?' 以避免乱码
+	std::string toDisplayString(const std::wstring& text)
+	{
+		std::string result;
+		result.reserve(text.size());
+		for (const wchar_t character : text)
+			result.push_back(character < 128 ? static_cast<char>(character) : '?');
+		return result;
+	}
 }
 
 bool Menu::initialize()
 {
-	// Create application window
-	//ImGui_ImplWin32_EnableDpiAwareness();
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, Menu::WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("WC"), NULL };
+	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, Menu::WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"WC", NULL };
 	::RegisterClassEx(&wc);
 	const auto nativeWindowTitle = makeRandomWindowTitle();
 	this->hwnd = ::CreateWindow(wc.lpszClassName, nativeWindowTitle.c_str(),
@@ -82,34 +90,29 @@ bool Menu::initialize()
 	}
 	applyRoundedWindowRegion(this->hwnd);
 
-	// Initialize Direct3D
 	if (!createD3D9Device(hwnd))
 	{
 		cleanupD3D9Device();
 		::UnregisterClass(wc.lpszClassName, wc.hInstance);
-		return 1;
+		return false;
 	}
 
-	// Show the window
 	::ShowWindow(hwnd, SW_SHOWDEFAULT);
 	::UpdateWindow(hwnd);
 
-	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.WantSaveIniSettings = false;
 
-	// Setup Dear ImGui style
 	setupMenuStyle(true, 1);
 
-	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX9_Init(this->d3dDevice);
 
+	g_injector->setTargetProcessName(vars::gameProfiles[0].processName);
 	this->isMenuOn = true;
 	std::thread(&Menu::detectGame, this).detach();
-	std::thread(&Menu::detectSteam, this).detach();
 	std::thread(&Menu::updateFiles, this).detach();
 
 	return true;
@@ -117,7 +120,6 @@ bool Menu::initialize()
 
 void Menu::loop()
 {
-	// Main loop
 	while (this->isMenuOn)
 	{
 		MSG msg;
@@ -131,7 +133,6 @@ void Menu::loop()
 		if (!this->isMenuOn)
 			break;
 
-		// Start the Dear ImGui frame
 		ImGui_ImplDX9_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -175,7 +176,6 @@ void Menu::loop()
 
 		ImGui::End();
 
-		// Rendering
 		ImGui::EndFrame();
 
 		this->d3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
@@ -190,8 +190,7 @@ void Menu::loop()
 			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 			this->d3dDevice->EndScene();
 		}
-		HRESULT result = this->d3dDevice->Present(NULL, NULL, NULL, NULL);
-
+		this->d3dDevice->Present(NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -202,12 +201,12 @@ bool Menu::createD3D9Device(HWND hWnd)
 	ZeroMemory(&this->d3dpp, sizeof(this->d3dpp));
 	this->d3dpp.Windowed = TRUE;
 	this->d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	this->d3dpp.BackBufferFormat = D3DFMT_UNKNOWN; 
+	this->d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
 	this->d3dpp.EnableAutoDepthStencil = TRUE;
 	this->d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
-	this->d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;       
+	this->d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 	this->d3dpp.hDeviceWindow = hWnd;
-	auto result = this->pD3D->CreateDevice(
+	const auto result = this->pD3D->CreateDevice(
 		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
 		hwnd,
@@ -267,24 +266,17 @@ LRESULT __stdcall Menu::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 void Menu::renderStatusPanel()
 {
-	ImGui::BeginChild("StatusPanel", ImVec2(0, 112), true);
+	ImGui::BeginChild("StatusPanel", ImVec2(0, 74), true);
 	ImGui::TextDisabled("SYSTEM STATUS");
-	ImGui::SameLine(ImGui::GetWindowWidth() - 96.0f);
-		ImGui::TextColored(ImVec4(0.35f, 0.82f, 0.55f, 1.0f), "ONLINE");
 	ImGui::Separator();
 
-	const auto status = [](const char* label, bool active, const char* activeText, const char* inactiveText)
-	{
-		ImGui::TextColored(active ? ImVec4(0.35f, 0.85f, 0.55f, 1.0f) : ImVec4(0.92f, 0.38f, 0.42f, 1.0f), ">>");
-		ImGui::SameLine();
-		ImGui::TextUnformatted(label);
-		ImGui::SameLine(178.0f);
-		ImGui::TextColored(active ? ImVec4(0.35f, 0.85f, 0.55f, 1.0f) : ImVec4(0.92f, 0.38f, 0.42f, 1.0f), "%s", active ? activeText : inactiveText);
-	};
-
-	status("Steam", g_injector->steamRunning, "RUNNING", "OFFLINE");
-	status("CS2", g_injector->csgoRunning, this->isInjecting ? "INJECTING" : "RUNNING", "OFFLINE");
-	ImGui::TextDisabled("VAC3 patching is disabled");
+	const auto running = g_injector->targetRunning.load(std::memory_order_acquire);
+	const auto statusColor = running ? ImVec4(0.35f, 0.85f, 0.55f, 1.0f) : ImVec4(0.92f, 0.38f, 0.42f, 1.0f);
+	ImGui::TextColored(statusColor, ">>");
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Target process");
+	ImGui::SameLine(178.0f);
+	ImGui::TextColored(statusColor, "%s", running ? "RUNNING" : "OFFLINE");
 	ImGui::EndChild();
 }
 
@@ -294,47 +286,64 @@ void Menu::renderTargetPanel()
 		ImGui::TextDisabled("TARGET PROCESS");
 		ImGui::Separator();
 		ImGui::Checkbox("Auto-close after operation", &g_injector->shouldAutoExit);
-		ImGui::Checkbox("Use custom process", &g_injector->isCustomProcess);
 
-		if (g_injector->isCustomProcess)
+		const auto currentGameName = toDisplayString(
+			vars::gameProfiles[std::clamp(this->selectedGame, 0,
+				static_cast<int>(std::size(vars::gameProfiles)) - 1)].displayName);
+		if (ImGui::BeginCombo("Preset game", currentGameName.c_str()))
 		{
-			auto processes = mem::getProcList();
-			std::string processItems;
-			std::vector<std::wstring> processNames;
-			for (const auto& process : processes)
+			for (int index = 0; index < static_cast<int>(std::size(vars::gameProfiles)); ++index)
 			{
-				for (const auto character : process.second)
-					processItems += static_cast<char>(character);
+				const auto label = toDisplayString(vars::gameProfiles[index].displayName);
+				if (ImGui::Selectable(label.c_str(), index == this->selectedGame))
+				{
+					this->selectedGame = index;
+					g_injector->setTargetProcessName(vars::gameProfiles[index].processName);
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		const auto processSnapshot = snapshotProcessNames();
+		if (!processSnapshot.empty())
+		{
+			std::string processItems;
+			std::vector<std::string> displayNames;
+			displayNames.reserve(processSnapshot.size());
+			for (const auto& name : processSnapshot)
+			{
+				displayNames.push_back(toDisplayString(name));
+				processItems += displayNames.back();
 				processItems.push_back('\0');
-				processNames.push_back(process.second);
 			}
 			processItems.push_back('\0');
 
-			if (!processNames.empty())
-			{
-				this->selectedProcess = std::clamp(this->selectedProcess, 0, static_cast<int>(processNames.size()) - 1);
-				if (ImGui::Combo("Process", &this->selectedProcess, processItems.c_str()))
-					g_injector->customProcessName = processNames[this->selectedProcess];
-			}
-			else
-			{
-				ImGui::TextDisabled("No running processes found");
-			}
+			this->selectedProcess = std::clamp(this->selectedProcess, 0, static_cast<int>(processSnapshot.size()) - 1);
+			if (ImGui::Combo("Running process", &this->selectedProcess, processItems.c_str()))
+				g_injector->setTargetProcessName(processSnapshot[this->selectedProcess]);
 		}
 		else
 		{
-			ImGui::TextDisabled("Target: Counter-Strike 2");
+			ImGui::TextDisabled("No running processes found");
 		}
+
+		ImGui::TextDisabled("Target: %s", toDisplayString(g_injector->getTargetProcessName()).c_str());
 	ImGui::EndChild();
 }
 
-std::vector<std::string> Menu::snapshotDllPaths()
+std::vector<std::wstring> Menu::snapshotDllPaths()
 {
 	std::scoped_lock lock(this->mtx);
 	return this->filePaths;
 }
 
-void Menu::renderInjectionPanel(const std::vector<std::string>& paths)
+std::vector<std::wstring> Menu::snapshotProcessNames()
+{
+	std::scoped_lock lock(this->mtx);
+	return this->processNames;
+}
+
+void Menu::renderInjectionPanel(const std::vector<std::wstring>& paths)
 {
 	ImGui::BeginChild("ModulePanel", ImVec2(0, 0), true);
 		ImGui::TextDisabled("MODULE WORKSPACE");
@@ -348,13 +357,18 @@ void Menu::renderInjectionPanel(const std::vector<std::string>& paths)
 		else
 		{
 			std::string dllItems;
+			std::vector<std::string> displayNames;
+			displayNames.reserve(paths.size());
 			for (const auto& path : paths)
 			{
-				const auto separator = path.find_last_of("\\/");
-				dllItems += path.substr(separator == std::string::npos ? 0 : separator + 1);
+				const auto displayName = toDisplayString(path);
+				const auto separator = displayName.find_last_of("\\/");
+				displayNames.push_back(displayName.substr(separator == std::string::npos ? 0 : separator + 1));
+				dllItems += displayNames.back();
 				dllItems.push_back('\0');
 			}
 			dllItems.push_back('\0');
+
 			this->selectedDLL = std::clamp(this->selectedDLL, 0, static_cast<int>(paths.size()) - 1);
 			ImGui::Combo("DLL", &this->selectedDLL, dllItems.c_str());
 		}
@@ -367,22 +381,21 @@ void Menu::renderInjectionPanel(const std::vector<std::string>& paths)
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.63f, 1.0f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.12f, 0.40f, 0.82f, 1.0f));
 		if (ImGui::Button(this->isInjecting ? "Injecting..." : "Inject selected module", ImVec2(-1.0f, 42.0f)) && canInject)
-		{
-			bool valid = true;
-			if (g_injector->isCustomProcess && mem::getProcID(g_injector->customProcessName) == NULL)
-			{
-				MessageBox(hwnd, L"Custom process not found...", nullptr, 0);
-				valid = false;
-			}
-			if (valid)
-				std::thread(&Injector::inject, g_injector.get(), paths[this->selectedDLL]).detach();
-		}
+			std::thread(&Injector::inject, g_injector.get(), paths[this->selectedDLL]).detach();
 		if (!canInject)
 			ImGui::EndDisabled();
 		ImGui::PopStyleColor(3);
 
 		if (this->isInjecting)
 			ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "Injecting module...");
+		else
+		{
+			const auto [succeeded, error] = g_injector->snapshotResult();
+			if (succeeded)
+				ImGui::TextColored(ImVec4(0.35f, 0.85f, 0.55f, 1.0f), "Injection completed");
+			else if (!error.empty())
+				ImGui::TextWrapped("%s", toDisplayString(error).c_str());
+		}
 	ImGui::EndChild();
 }
 
@@ -447,42 +460,58 @@ void Menu::setupMenuStyle(bool isDarkTheme, float alpha)
 	style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
 }
 
-void Menu::detectSteam()
-{
-	while (this->isMenuOn)
-	{
-		DWORD pID = mem::getProcID(vars::str_steam_process_name.data());
-		g_injector->steamRunning = !(pID == NULL);
-		std::this_thread::sleep_for(1s);
-	}
-}
-
 void Menu::detectGame()
 {
 	while (this->isMenuOn)
 	{
-		DWORD pID = mem::getProcID(vars::str_game_process_name.data());
-		g_injector->csgoRunning = !(pID == NULL);
+		// 单次进程快照同时完成"目标是否在运行"与"进程下拉列表"两项任务
+		const auto procList = mem::getProcList();
+		const auto targetName = string::toLower(g_injector->getTargetProcessName());
+
+		bool running = false;
+		{
+			std::scoped_lock lock(this->mtx);
+			this->processNames.clear();
+			this->processNames.reserve(procList.size());
+			for (const auto& process : procList)
+			{
+				this->processNames.push_back(process.second);
+				if (string::toLower(process.second) == targetName)
+					running = true;
+			}
+		}
+
+		g_injector->targetRunning.store(running, std::memory_order_release);
 		std::this_thread::sleep_for(1s);
 	}
 }
 
 void Menu::updateFiles()
 {
-	if (!std::filesystem::is_directory(vars::str_dll_dir_path) || !std::filesystem::exists(vars::str_dll_dir_path)) { // Check if src folder exists
-		std::filesystem::create_directory(vars::str_dll_dir_path); // create src folder
-	}
-	
+	std::error_code error;
+	if (!std::filesystem::is_directory(vars::str_dll_dir_path, error) || !std::filesystem::exists(vars::str_dll_dir_path, error))
+		std::filesystem::create_directory(vars::str_dll_dir_path, error);
+
 	while (this->isMenuOn)
 	{
-		this->mtx.lock();
-		this->filePaths.clear();
-		for (const auto& file : std::filesystem::directory_iterator(vars::str_dll_dir_path))
+		try
 		{
-			if (!std::filesystem::is_directory(file) && (file.path().string().substr(file.path().string().find_last_of(".") + 1) == "dll"))
-				this->filePaths.push_back(file.path().string());
+			// 先在锁外构建列表，再整体替换，缩短持锁时间
+			std::vector<std::wstring> paths;
+			for (const auto& file : std::filesystem::directory_iterator(vars::str_dll_dir_path))
+			{
+				const auto extension = file.path().extension().wstring();
+				if (file.is_regular_file() && _wcsicmp(extension.c_str(), L".dll") == 0)
+					paths.push_back(std::filesystem::absolute(file.path()).wstring());
+			}
+
+			std::scoped_lock lock(this->mtx);
+			this->filePaths = std::move(paths);
 		}
-		this->mtx.unlock();
+		catch (const std::exception&)
+		{
+			// 目录被删除等异常情况下保留现有列表，下一轮再重试
+		}
 		std::this_thread::sleep_for(1s);
 	}
 }

@@ -1,5 +1,8 @@
 #pragma once
 #include <atomic>
+#include <mutex>
+#include <string>
+#include <vector>
 
 class Menu
 {
@@ -11,6 +14,9 @@ public:
 	bool initialize();
 
 	void loop();
+
+	// 注入是否仍在进行（主线程退出前需等待其结束）
+	bool isBusy() const { return isInjecting.load(std::memory_order_acquire); }
 
 private:
 	bool createD3D9Device(HWND hWnd);
@@ -25,11 +31,11 @@ private:
 
 	void renderTargetPanel();
 
-	std::vector<std::string> snapshotDllPaths();
+	std::vector<std::wstring> snapshotDllPaths();
 
-	void renderInjectionPanel(const std::vector<std::string>& paths);
+	std::vector<std::wstring> snapshotProcessNames();
 
-	void detectSteam();
+	void renderInjectionPanel(const std::vector<std::wstring>& paths);
 
 	void detectGame();
 
@@ -45,7 +51,9 @@ private:
 	std::atomic_bool isInjecting{ false };
 	bool isDarkTheme{ true };
 
-	std::vector<std::string> filePaths;
+	std::vector<std::wstring> filePaths;
+	std::vector<std::wstring> processNames;
+	int selectedGame{ 0 };
 	int selectedProcess{ 0 };
 	int selectedDLL{ 0 };
 
@@ -54,4 +62,3 @@ private:
 };
 
 inline auto g_menu = std::make_unique<Menu>();
-
