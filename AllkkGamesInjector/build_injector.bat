@@ -46,7 +46,9 @@ if errorlevel 1 (
 )
 
 echo === Linking bin\potatoInjector.exe ===
-link /nologo /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup /OUT:bin\potatoInjector.exe bin\main.obj bin\Menu.obj bin\injector.obj bin\imgui.obj bin\imgui_draw.obj bin\imgui_tables.obj bin\imgui_widgets.obj bin\imgui_impl_dx9.obj bin\imgui_impl_win32.obj kernel32.lib user32.lib gdi32.lib imm32.lib d3d9.lib
+REM /MANIFESTUAC requireAdministrator: game processes spawned by KK/WeGame platform
+REM run elevated; a non-elevated injector cannot OpenProcess/CreateRemoteThread on them.
+link /nologo /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup /MANIFEST:EMBED /MANIFESTUAC:"level='requireAdministrator' uiAccess='false'" /OUT:bin\potatoInjector.exe bin\main.obj bin\Menu.obj bin\injector.obj bin\imgui.obj bin\imgui_draw.obj bin\imgui_tables.obj bin\imgui_widgets.obj bin\imgui_impl_dx9.obj bin\imgui_impl_win32.obj kernel32.lib user32.lib gdi32.lib imm32.lib d3d9.lib advapi32.lib shell32.lib
 if errorlevel 1 (
     echo [ERR] link failed
     exit /b 1

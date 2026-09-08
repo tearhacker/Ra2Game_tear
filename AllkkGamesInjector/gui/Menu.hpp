@@ -40,6 +40,8 @@ private:
 
 	void renderInjectionPanel(const std::vector<std::wstring>& paths);
 
+	void renderLogPanel();
+
 	void detectGame();
 
 	void updateFiles();

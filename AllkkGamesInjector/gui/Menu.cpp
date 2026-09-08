@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <random>
+#include <shellapi.h>
 
 namespace
 {
@@ -62,6 +63,20 @@ namespace
 		return darkTheme
 			? ImVec4(0.075f, 0.095f, 0.140f, 1.0f)
 			: ImVec4(0.875f, 0.910f, 0.960f, 1.0f);
+	}
+
+	ImVec4 logLevelColor(logger::Level level, bool darkTheme)
+	{
+		switch (level)
+		{
+		case logger::Level::Ok:   return { 0.35f, 0.85f, 0.55f, 1.0f };
+		case logger::Level::Warn: return { 1.00f, 0.75f, 0.25f, 1.0f };
+		case logger::Level::Err:  return { 0.95f, 0.38f, 0.42f, 1.0f };
+		default:
+			return darkTheme
+				? ImVec4(0.78f, 0.82f, 0.90f, 1.0f)
+				: ImVec4(0.15f, 0.18f, 0.25f, 1.0f);
+		}
 	}
 
 	// 转为 ImGui 所需的 UTF-8；已加载中文字体，中文可正常显示
@@ -150,7 +165,24 @@ bool Menu::initialize()
 	this->isChineseLang = detectSystemChinese();
 
 	g_injector->setTargetProcessName(vars::gameProfiles[0].processName);
+	g_injector->setTargetWindow(vars::gameProfiles[0].windowClass, vars::gameProfiles[0].windowTitle);
 	this->isMenuOn = true;
+
+	// 启动信息落日志：提权状态与实际生效的模块目录一眼可查
+	std::error_code pathError;
+	logger::g_logger.write(logger::Level::Info, L"==== 注入器启动 ====");
+	if (isElevated())
+		logger::g_logger.write(logger::Level::Ok, L"注入器以管理员权限运行");
+	else
+		logger::g_logger.write(logger::Level::Warn,
+			L"注入器未以管理员运行：若游戏以管理员启动，注入将失败 (error 5)");
+	logger::g_logger.write(logger::Level::Info,
+		L"工作目录: " + std::filesystem::absolute(L".", pathError).wstring());
+	logger::g_logger.write(logger::Level::Info,
+		L"模块目录: " + std::filesystem::absolute(vars::str_dll_dir_path, pathError).wstring());
+	logger::g_logger.write(logger::Level::Info,
+		L"日志文件: " + logger::g_logger.filePath());
+
 	std::thread(&Menu::detectGame, this).detach();
 	std::thread(&Menu::updateFiles, this).detach();
 
@@ -221,10 +253,23 @@ void Menu::loop()
 		ImGui::EndChild();
 		ImGui::Spacing();
 
-		renderStatusPanel();
-		renderTargetPanel();
-		const auto paths = snapshotDllPaths();
-		renderInjectionPanel(paths);
+		if (ImGui::BeginTabBar("MainTabs"))
+		{
+			if (ImGui::BeginTabItem(langText("Injector", "注入器")))
+			{
+				renderStatusPanel();
+				renderTargetPanel();
+				const auto paths = snapshotDllPaths();
+				renderInjectionPanel(paths);
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem(langText("Run log", "运行日志")))
+			{
+				renderLogPanel();
+				ImGui::EndTabItem();
+			}
+			ImGui::EndTabBar();
+		}
 
 		ImGui::End();
 
@@ -359,6 +404,8 @@ void Menu::renderTargetPanel()
 				{
 					this->selectedGame = index;
 					g_injector->setTargetProcessName(profile.processName);
+					logger::g_logger.write(logger::Level::Info,
+						std::wstring(L"目标进程已选择: ") + profile.processName);
 				}
 			}
 			ImGui::EndCombo();
@@ -462,6 +509,35 @@ void Menu::renderInjectionPanel(const std::vector<std::wstring>& paths)
 	ImGui::EndChild();
 }
 
+void Menu::renderLogPanel()
+{
+	if (ImGui::Button(langText("Clear log", "清空日志"), ImVec2(110.0f, 0.0f)))
+		logger::g_logger.clear();
+	ImGui::SameLine();
+	if (ImGui::Button(langText("Open log file", "打开日志文件"), ImVec2(130.0f, 0.0f)))
+		::ShellExecuteW(nullptr, L"open", logger::g_logger.filePath().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", toDisplayString(
+		std::filesystem::path(logger::g_logger.filePath()).filename().wstring()).c_str());
+
+	ImGui::BeginChild("LogScroll", ImVec2(0, 0), false);
+	// 用户翻阅历史时不打断滚动；停留在底部则跟随最新日志
+	const bool stickToBottom = ImGui::GetScrollY() + 40.0f >= ImGui::GetScrollMaxY();
+	logger::g_logger.forEach([this](const logger::Entry& entry)
+	{
+		ImGui::TextColored(ImGui::GetStyle().Colors[ImGuiCol_TextDisabled],
+			"%s", toDisplayString(entry.time).c_str());
+		ImGui::SameLine();
+		ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
+		ImGui::TextColored(logLevelColor(entry.level, this->isDarkTheme),
+			"%s", toDisplayString(entry.message).c_str());
+		ImGui::PopTextWrapPos();
+	});
+	if (stickToBottom && ImGui::GetScrollMaxY() > 0.0f)
+		ImGui::SetScrollHereY(1.0f);
+	ImGui::EndChild();
+}
+
 void Menu::setupMenuStyle(bool isDarkTheme, float alpha)
 {
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -545,6 +621,11 @@ void Menu::detectGame()
 		}
 
 		g_injector->targetRunning.store(running, std::memory_order_release);
+		// 窗口定位与进程名定位并列：任一命中即视为目标在运行
+		const bool runningByWindow = mem::getProcIDByWindow(
+			g_injector->getTargetWindowClass(), g_injector->getTargetWindowTitle()) != 0;
+		if (runningByWindow)
+			g_injector->targetRunning.store(true, std::memory_order_release);
 		std::this_thread::sleep_for(1s);
 	}
 }
@@ -569,6 +650,9 @@ void Menu::updateFiles()
 			}
 
 			std::scoped_lock lock(this->mtx);
+			if (this->filePaths != paths)
+				logger::g_logger.write(logger::Level::Info,
+					L"模块目录扫描: 找到 " + std::to_wstring(paths.size()) + L" 个 DLL");
 			this->filePaths = std::move(paths);
 		}
 		catch (const std::exception&)

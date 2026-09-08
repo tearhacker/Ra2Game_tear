@@ -20,6 +20,7 @@
 #pragma comment(lib, "d3d9.lib")
 
 #include "injector/injector.hpp"
+#include "gui/Logger.hpp"
 #include "memory/memory.hpp"
 #include "vars/vars.hpp"
 #include "utils/utils.hpp"
