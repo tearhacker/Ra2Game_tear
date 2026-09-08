@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "diagnostics.h"
 #include "esp.h"
@@ -35,6 +35,8 @@ namespace
     std::atomic_bool g_menuVisible{ true };
     HWND g_window = nullptr;
     HGLRC g_renderContext = nullptr;
+    // true = 无 GL 上下文的软件渲染模式（DirectDraw 演示路径）
+    bool g_softwareMode = false;
 
     // ImGui 默认字体(ProggyClean)不含 CJK 字形，中文会被渲染成 "?"。
     //
@@ -394,12 +396,28 @@ bool Ra2Overlay::UiShell::Initialize(HWND window, HDC deviceContext, HGLRC rende
         return false;
     }
 
-    if (!ImGui_ImplOpenGL2_Init())
+    if (renderContext)
     {
-        Log::Write("ImGui OpenGL2 backend initialization failed");
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-        return false;
+        if (!ImGui_ImplOpenGL2_Init())
+        {
+            Log::Write("ImGui OpenGL2 backend initialization failed");
+            ImGui_ImplWin32_Shutdown();
+            ImGui::DestroyContext();
+            return false;
+        }
+    }
+    else
+    {
+        // 软件渲染模式（DirectDraw 演示路径，无 GL 上下文）：
+        // 不设置 ImGuiBackendFlags_RendererHasTextures → 图集走 legacy 立即构建，
+        // 全部字形一次性烘焙进 CPU 侧 ImTextureData，供 sw_render 直接采样。
+        unsigned char* pixels = nullptr;
+        int texWidth = 0;
+        int texHeight = 0;
+        int texBpp = 0;
+        ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &texWidth, &texHeight, &texBpp);
+        g_softwareMode = true;
+        Log::Write("UI shell: software rendering mode (font atlas %dx%d built)", texWidth, texHeight);
     }
 
     g_window = window;
@@ -450,8 +468,7 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                     ImGui::TextWrapped("GL_RENDERER: %s", info.glRenderer.c_str());
                     ImGui::Separator();
                     ImGui::TextUnformatted("Hook: GDI32!SwapBuffers");
-                    ImGui::TextUnformatted("Build: Win32/x86, VS2022 v143");
-                    if (DangerousButton("卸载覆盖层"))
+                    ImGui::TextUnformatted("Build: Win32/x86, VS2022 v143");                    if (DangerousButton("卸载覆盖层"))
                     {
                         Runtime::RequestShutdown();
                     }
@@ -481,9 +498,9 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                 if (configurationOpen)
                 {
                     ImGui::TextUnformatted("Insert：显示/隐藏覆盖层");
-                    ImGui::TextUnformatted("End：卸载覆盖层");
-                    ImGui::TextUnformatted("渲染后端：OpenGL2");
-                    ImGui::EndTabItem();
+                ImGui::TextUnformatted("End：卸载覆盖层");
+                ImGui::Text("渲染后端：%s", g_softwareMode ? "Software (GDI/DirectDraw)" : "OpenGL2");
+                ImGui::EndTabItem();
                 }
 
                 const bool espOpen = ImGui::BeginTabItem("透视");
@@ -586,11 +603,15 @@ void Ra2Overlay::UiShell::Shutdown()
         return;
     }
 
-    ImGui_ImplOpenGL2_Shutdown();
+    if (!g_softwareMode)
+    {
+        ImGui_ImplOpenGL2_Shutdown();
+    }
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
     g_renderContext = nullptr;
     g_window = nullptr;
+    g_softwareMode = false;
     Log::Write("ImGui shut down on render thread");
 }
 

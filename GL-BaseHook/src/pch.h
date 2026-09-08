@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -9,6 +9,7 @@
 
 #include <Windows.h>
 #include <gl/GL.h>
+#include <ddraw.h>
 
 #include <algorithm>
 #include <atomic>

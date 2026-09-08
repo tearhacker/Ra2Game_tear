@@ -64,14 +64,50 @@ namespace
 			: ImVec4(0.875f, 0.910f, 0.960f, 1.0f);
 	}
 
-	// ImGui 默认字体仅支持 ASCII，非 ASCII 字符统一替换为 '?' 以避免乱码
+	// 转为 ImGui 所需的 UTF-8；已加载中文字体，中文可正常显示
 	std::string toDisplayString(const std::wstring& text)
 	{
-		std::string result;
-		result.reserve(text.size());
-		for (const wchar_t character : text)
-			result.push_back(character < 128 ? static_cast<char>(character) : '?');
+		if (text.empty())
+			return {};
+
+		const int size = ::WideCharToMultiByte(CP_UTF8, 0, text.c_str(),
+			static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
+		if (size <= 0)
+			return {};
+
+		std::string result(static_cast<std::size_t>(size), '\0');
+		::WideCharToMultiByte(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()),
+			result.data(), size, nullptr, nullptr);
 		return result;
+	}
+
+	// 按系统默认 UI 语言选择初始语言：简/繁中文 → 中文，其他 → 英文
+	bool detectSystemChinese()
+	{
+		const LANGID language = ::GetUserDefaultUILanguage();
+		return PRIMARYLANGID(language) == LANG_CHINESE;
+	}
+
+	// 加载支持中文的系统字体；失败时退回 ImGui 默认字体（中文将显示为 '?'）
+	void setupFonts()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		static const ImWchar* glyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+		static constexpr const char* fontCandidates[] = {
+			"C:\\Windows\\Fonts\\msyh.ttc",   // 微软雅黑
+			"C:\\Windows\\Fonts\\simhei.ttf", // 黑体
+			"C:\\Windows\\Fonts\\simsun.ttc", // 宋体
+		};
+
+		ImFontConfig config;
+		config.OversampleH = 2;
+		config.OversampleV = 1;
+		for (const char* fontPath : fontCandidates)
+		{
+			if (io.Fonts->AddFontFromFileTTF(fontPath, 16.0f, &config, glyphRanges) != nullptr)
+				return;
+		}
+		io.Fonts->AddFontDefault();
 	}
 }
 
@@ -105,10 +141,13 @@ bool Menu::initialize()
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.WantSaveIniSettings = false;
 
+	setupFonts();
 	setupMenuStyle(true, 1);
 
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX9_Init(this->d3dDevice);
+
+	this->isChineseLang = detectSystemChinese();
 
 	g_injector->setTargetProcessName(vars::gameProfiles[0].processName);
 	this->isMenuOn = true;
@@ -153,19 +192,32 @@ void Menu::loop()
 			ImGuiWindowFlags_NoScrollbar);
 		ImGui::BeginChild("Hero", ImVec2(0, 86), true);
 		ImGui::BeginGroup();
-		ImGui::TextColored(isDarkTheme ? ImVec4(0.42f, 0.80f, 1.00f, 1.00f) : ImVec4(0.08f, 0.40f, 0.78f, 1.00f), "POTATO INJECTOR");
-		ImGui::TextDisabled("A clean workspace for your selected module");
+		ImGui::TextColored(isDarkTheme ? ImVec4(0.42f, 0.80f, 1.00f, 1.00f) : ImVec4(0.08f, 0.40f, 0.78f, 1.00f), "TEARHACKER INJECTOR");
+		ImGui::TextDisabled("%s", langText("A clean workspace for your selected module", "为你所选模块提供的简洁工作区"));
+		ImGui::TextDisabled("%s", langText(
+			isDarkTheme ? "Night theme  -  live monitoring enabled" : "Day theme  -  live monitoring enabled",
+			isDarkTheme ? "夜间主题 - 实时监控已开启" : "日间主题 - 实时监控已开启"));
 		ImGui::EndGroup();
-		ImGui::SameLine(ImGui::GetWindowWidth() - 125.0f);
-		if (ImGui::Button(isDarkTheme ? "Day mode" : "Night mode", ImVec2(104.0f, 30.0f)))
+		ImGui::EndChild();
+		ImGui::Spacing();
+
+		// 独立工具条组件区：语言切换、主题切换、退出程序三个按钮，不与上方文字挤在一行
+		ImGui::BeginChild("Toolbar", ImVec2(0, 50), true);
+		if (ImGui::Button(isChineseLang ? "EN" : "中文", ImVec2(72.0f, 32.0f)))
+			isChineseLang = !isChineseLang;
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button(isDarkTheme ? langText("Day mode", "日间模式") : langText("Night mode", "夜间模式"), ImVec2(96.0f, 32.0f)))
 		{
 			isDarkTheme = !isDarkTheme;
 			setupMenuStyle(isDarkTheme, 1.0f);
 		}
 		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("X", ImVec2(28.0f, 30.0f)))
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.72f, 0.26f, 0.29f, 0.85f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.86f, 0.32f, 0.35f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.60f, 0.20f, 0.23f, 1.0f));
+		if (ImGui::Button(langText("Exit program", "退出程序"), ImVec2(96.0f, 32.0f)))
 			::PostMessage(hwnd, WM_CLOSE, 0, 0);
-		ImGui::TextDisabled("%s theme  -  live monitoring enabled", isDarkTheme ? "Night" : "Day");
+		ImGui::PopStyleColor(3);
 		ImGui::EndChild();
 		ImGui::Spacing();
 
@@ -245,8 +297,8 @@ LRESULT __stdcall Menu::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 			static_cast<LONG>(static_cast<short>(LOWORD(lParam))),
 			static_cast<LONG>(static_cast<short>(HIWORD(lParam))) };
 		::ScreenToClient(hWnd, &cursor);
-		// Keep the Hero area draggable while leaving the theme and close buttons clickable.
-		if (cursor.y >= 0 && cursor.y < 86 && cursor.x < 330)
+		// Hero 区为纯文字组件，可整块拖动窗口；按钮已移至下方独立工具条
+		if (cursor.y >= 0 && cursor.y < 86)
 			return HTCAPTION;
 		break;
 	}
@@ -264,41 +316,49 @@ LRESULT __stdcall Menu::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 	return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+const char* Menu::langText(const char* en, const char* zh) const
+{
+	return this->isChineseLang ? zh : en;
+}
+
 void Menu::renderStatusPanel()
 {
 	ImGui::BeginChild("StatusPanel", ImVec2(0, 74), true);
-	ImGui::TextDisabled("SYSTEM STATUS");
+	ImGui::TextDisabled("%s", langText("SYSTEM STATUS", "系统状态"));
 	ImGui::Separator();
 
 	const auto running = g_injector->targetRunning.load(std::memory_order_acquire);
 	const auto statusColor = running ? ImVec4(0.35f, 0.85f, 0.55f, 1.0f) : ImVec4(0.92f, 0.38f, 0.42f, 1.0f);
 	ImGui::TextColored(statusColor, ">>");
 	ImGui::SameLine();
-	ImGui::TextUnformatted("Target process");
+	ImGui::TextUnformatted(langText("Target process", "目标进程"));
 	ImGui::SameLine(178.0f);
-	ImGui::TextColored(statusColor, "%s", running ? "RUNNING" : "OFFLINE");
+	ImGui::TextColored(statusColor, "%s", running ? langText("RUNNING", "运行中") : langText("OFFLINE", "未运行"));
 	ImGui::EndChild();
 }
 
 void Menu::renderTargetPanel()
 {
 	ImGui::BeginChild("TargetPanel", ImVec2(0, 150), true);
-		ImGui::TextDisabled("TARGET PROCESS");
+		ImGui::TextDisabled("%s", langText("TARGET PROCESS", "目标进程"));
 		ImGui::Separator();
-		ImGui::Checkbox("Auto-close after operation", &g_injector->shouldAutoExit);
+		ImGui::Checkbox(langText("Auto-close after operation", "操作完成后自动退出"), &g_injector->shouldAutoExit);
 
+		const auto& activeProfile = vars::gameProfiles[std::clamp(this->selectedGame, 0,
+			static_cast<int>(std::size(vars::gameProfiles)) - 1)];
 		const auto currentGameName = toDisplayString(
-			vars::gameProfiles[std::clamp(this->selectedGame, 0,
-				static_cast<int>(std::size(vars::gameProfiles)) - 1)].displayName);
-		if (ImGui::BeginCombo("Preset game", currentGameName.c_str()))
+			this->isChineseLang ? activeProfile.displayNameZh : activeProfile.displayName);
+		if (ImGui::BeginCombo(langText("Preset game", "预设游戏"), currentGameName.c_str()))
 		{
 			for (int index = 0; index < static_cast<int>(std::size(vars::gameProfiles)); ++index)
 			{
-				const auto label = toDisplayString(vars::gameProfiles[index].displayName);
+				const auto& profile = vars::gameProfiles[index];
+				const auto label = toDisplayString(
+					this->isChineseLang ? profile.displayNameZh : profile.displayName);
 				if (ImGui::Selectable(label.c_str(), index == this->selectedGame))
 				{
 					this->selectedGame = index;
-					g_injector->setTargetProcessName(vars::gameProfiles[index].processName);
+					g_injector->setTargetProcessName(profile.processName);
 				}
 			}
 			ImGui::EndCombo();
@@ -319,15 +379,15 @@ void Menu::renderTargetPanel()
 			processItems.push_back('\0');
 
 			this->selectedProcess = std::clamp(this->selectedProcess, 0, static_cast<int>(processSnapshot.size()) - 1);
-			if (ImGui::Combo("Running process", &this->selectedProcess, processItems.c_str()))
+			if (ImGui::Combo(langText("Running process", "运行中的进程"), &this->selectedProcess, processItems.c_str()))
 				g_injector->setTargetProcessName(processSnapshot[this->selectedProcess]);
 		}
 		else
 		{
-			ImGui::TextDisabled("No running processes found");
+			ImGui::TextDisabled("%s", langText("No running processes found", "未发现运行中的进程"));
 		}
 
-		ImGui::TextDisabled("Target: %s", toDisplayString(g_injector->getTargetProcessName()).c_str());
+		ImGui::TextDisabled("%s: %s", langText("Target", "当前目标"), toDisplayString(g_injector->getTargetProcessName()).c_str());
 	ImGui::EndChild();
 }
 
@@ -346,13 +406,15 @@ std::vector<std::wstring> Menu::snapshotProcessNames()
 void Menu::renderInjectionPanel(const std::vector<std::wstring>& paths)
 {
 	ImGui::BeginChild("ModulePanel", ImVec2(0, 0), true);
-		ImGui::TextDisabled("MODULE WORKSPACE");
+		ImGui::TextDisabled("%s", langText("MODULE WORKSPACE", "模块工作区"));
 		ImGui::Separator();
 		if (paths.empty())
 		{
-			ImGui::TextDisabled("No DLL files found in ./dlls");
+			ImGui::TextDisabled("%s", langText("No DLL files found in ./dlls", "在 ./dlls 中未找到 DLL 文件"));
 			ImGui::Spacing();
-			ImGui::TextWrapped("Place a DLL in the dlls folder to make it available here.");
+			ImGui::TextWrapped("%s", langText(
+				"Place a DLL in the dlls folder to make it available here.",
+				"将 DLL 文件放入 dlls 文件夹即可在此处选用。"));
 		}
 		else
 		{
@@ -380,19 +442,20 @@ void Menu::renderInjectionPanel(const std::vector<std::wstring>& paths)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.52f, 0.92f, canInject ? 1.0f : 0.35f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.63f, 1.0f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.12f, 0.40f, 0.82f, 1.0f));
-		if (ImGui::Button(this->isInjecting ? "Injecting..." : "Inject selected module", ImVec2(-1.0f, 42.0f)) && canInject)
+		if (ImGui::Button(isInjecting ? langText("Injecting...", "注入中...")
+			: langText("Inject selected module", "注入所选模块"), ImVec2(-1.0f, 42.0f)) && canInject)
 			std::thread(&Injector::inject, g_injector.get(), paths[this->selectedDLL]).detach();
 		if (!canInject)
 			ImGui::EndDisabled();
 		ImGui::PopStyleColor(3);
 
 		if (this->isInjecting)
-			ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "Injecting module...");
+			ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "%s", langText("Injecting module...", "正在注入模块..."));
 		else
 		{
 			const auto [succeeded, error] = g_injector->snapshotResult();
 			if (succeeded)
-				ImGui::TextColored(ImVec4(0.35f, 0.85f, 0.55f, 1.0f), "Injection completed");
+				ImGui::TextColored(ImVec4(0.35f, 0.85f, 0.55f, 1.0f), "%s", langText("Injection completed", "注入完成"));
 			else if (!error.empty())
 				ImGui::TextWrapped("%s", toDisplayString(error).c_str());
 		}

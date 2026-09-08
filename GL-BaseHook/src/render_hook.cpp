@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "ddraw_hook.h"
 #include "log.h"
 #include "render_hook.h"
 #include "runtime.h"
@@ -115,12 +116,20 @@ bool Ra2Overlay::RenderHook::Initialize()
     }
 
     Log::Write("Hook enabled: GDI32!SwapBuffers at %p", g_swapBuffersTarget);
+
+    // DirectDraw 演示路径（纯单机 gamemd.exe 走系统 ddraw，不经 SwapBuffers）。
+    // 失败仅记日志，非致命。
+    if (!Ra2Overlay::DDrawHook::Initialize())
+    {
+        Log::Write("DDraw hook initialization failed (non-fatal)");
+    }
     return true;
 }
 
 void Ra2Overlay::RenderHook::BeginShutdown()
 {
     g_stopping.store(true, std::memory_order_release);
+    Ra2Overlay::DDrawHook::BeginShutdown();
     if (!UiShell::IsInitialized())
     {
         WindowBridge::Detach();
@@ -131,6 +140,9 @@ void Ra2Overlay::RenderHook::BeginShutdown()
 void Ra2Overlay::RenderHook::Shutdown()
 {
     g_stopping.store(true, std::memory_order_release);
+
+    // 先还原 DirectDraw vtable 钩子，避免卸载 MinHook 后仍有 DD 调用进入覆盖层
+    Ra2Overlay::DDrawHook::Shutdown();
 
     if (g_swapBuffersTarget)
     {

@@ -27,6 +27,9 @@ private:
 
 	void setupMenuStyle(bool isDarkTheme, float alpha);
 
+	// 按当前语言取文案：zh 为中文，en 为英文
+	const char* langText(const char* en, const char* zh) const;
+
 	void renderStatusPanel();
 
 	void renderTargetPanel();
@@ -50,6 +53,7 @@ private:
 	std::atomic_bool isMenuOn{ false };
 	std::atomic_bool isInjecting{ false };
 	bool isDarkTheme{ true };
+	bool isChineseLang{ false };  // initialize() 中按系统语言初始化
 
 	std::vector<std::wstring> filePaths;
 	std::vector<std::wstring> processNames;
