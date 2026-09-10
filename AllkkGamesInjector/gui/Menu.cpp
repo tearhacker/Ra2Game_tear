@@ -404,8 +404,14 @@ void Menu::renderTargetPanel()
 				{
 					this->selectedGame = index;
 					g_injector->setTargetProcessName(profile.processName);
+					// 窗口信息必须与进程名同步更新：不同启动渠道的窗口类名不同
+					// （原版 "Yuri's Revenge" 带撇号，KK 启动器版 "Yuris Revenge" 不带），
+					// 只改进程名会让窗口定位永远失败并退回到不可靠的进程名兜底。
+					g_injector->setTargetWindow(profile.windowClass, profile.windowTitle);
 					logger::g_logger.write(logger::Level::Info,
-						std::wstring(L"目标进程已选择: ") + profile.processName);
+						std::wstring(L"目标进程已选择: ") + profile.processName
+						+ L"，窗口类名: " + profile.windowClass
+						+ L"，窗口标题: " + profile.windowTitle);
 				}
 			}
 			ImGui::EndCombo();
@@ -621,7 +627,9 @@ void Menu::detectGame()
 		}
 
 		g_injector->targetRunning.store(running, std::memory_order_release);
-		// 窗口定位与进程名定位并列：任一命中即视为目标在运行
+		// 窗口定位与进程名定位并列：任一命中即视为目标在运行。
+		// 用户手动从"运行中的进程"下拉选目标时窗口信息不会更新（那份列表
+		// 只有进程名），此时状态显示完全依赖进程名匹配，这是正常的。
 		const bool runningByWindow = mem::getProcIDByWindow(
 			g_injector->getTargetWindowClass(), g_injector->getTargetWindowTitle()) != 0;
 		if (runningByWindow)

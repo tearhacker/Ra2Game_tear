@@ -52,6 +52,10 @@ private:
 
 	DWORD waitForProcess(const std::wstring& processName);
 
+	// 等待失败时生成诊断串：列出疑似红警进程的实际名字/窗口类名，
+	// 让用户一眼看出"预设进程名与实际不符"还是"窗口类名不符"。
+	std::wstring describeTargetSearch(const std::wstring& processName) const;
+
 	// 返回空串表示成功，否则返回错误描述
 	std::wstring injectByLoadLibrary(HANDLE processHandle, const std::wstring& dllPath);
 

@@ -24,6 +24,7 @@
 #include "feature_unit_speed_up.h"
 #include "log.h"
 #include "runtime.h"
+#include "sw_render.h"
 #include "ui_shell.h"
 
 #include <shellapi.h>
@@ -589,11 +590,29 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
         }
     }
 
-        // ESP 绘制：在 ImGui 本帧绘制数据定稿前写入前景层，随 SwapBuffers 一起上屏。
-        Ra2Overlay::Esp::Render();
+    // ESP 绘制：在 ImGui 本帧绘制数据定稿前写入前景层，随 SwapBuffers 一起上屏。
+    Ra2Overlay::Esp::Render();
 
-        ImGui::Render();
+    ImGui::Render();
+    if (g_softwareMode)
+    {
+        // DirectDraw 演示路径：无 GL 上下文，走 CPU 光栅化 + GdiAlphaBlend 上屏。
+        // 此处若误调 ImGui_ImplOpenGL2_RenderDrawData，会在无 HGLRC 的情况下
+        // 调用 glBindTexture/glDrawElements，菜单永远画不出来。
+        if (!Ra2Overlay::SoftwareRender::RenderDrawData(ImGui::GetDrawData(), deviceContext))
+        {
+            static bool reported = false;
+            if (!reported)
+            {
+                reported = true;
+                Log::Write("UI shell: software render frame failed");
+            }
+        }
+    }
+    else
+    {
         ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+    }
 }
 
 void Ra2Overlay::UiShell::Shutdown()

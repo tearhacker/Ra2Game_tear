@@ -131,8 +131,11 @@ namespace mem
 			const bool classMatch = !q->windowClass->empty()
 				&& string::toLower(className) == *q->windowClass;
 
+			// 标题匹配独立于类名：类名对不上时仍允许靠标题命中。
+			// 不同启动渠道的窗口类名差异很大（"Yuri's Revenge" 与 "Yuris Revenge"
+			// 仅差一个撇号），要求两者同时满足会让预设极难命中，因此任一命中即可。
 			bool titleMatch = false;
-			if (!classMatch && !q->windowTitle->empty())
+			if (!q->windowTitle->empty())
 			{
 				wchar_t titleText[256]{};
 				GetWindowTextW(hwnd, titleText, 256);

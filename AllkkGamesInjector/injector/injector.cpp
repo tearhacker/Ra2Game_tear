@@ -182,7 +182,7 @@ bool Injector::inject(std::wstring dllPath)
 		L"[3/8] 等待目标进程（优先窗口定位，进程名兜底，最长 30 秒）...");
 	const auto pid = waitForProcess(processName);
 	if (pid == 0)
-		return fail(L"[3/8] 30 秒内未发现目标进程: " + processName);
+		return fail(L"[3/8] 30 秒内未发现目标进程: " + processName + L" " + describeTargetSearch(processName));
 	lg::g_logger.write(lg::Level::Ok, L"[3/8] 已定位目标进程 pid=" + std::to_wstring(pid));
 
 	lg::g_logger.write(lg::Level::Info, L"[4/8] OpenProcess 打开目标进程...");
@@ -238,6 +238,78 @@ DWORD Injector::waitForProcess(const std::wstring& processName)
 		std::this_thread::sleep_for(kPollInterval);
 	}
 	return 0;
+}
+
+// 等待超时时的现场取证：把"疑似红警进程"及其窗口类名/标题全部列出来。
+// 目的是让用户直接看到预设置与实际运行环境的差异，而不是只看到一句
+// "30 秒内未发现目标进程"，然后无从下手。
+namespace
+{
+	// 定义在文件作用域：EnumWindows 的无捕获 lambda 需要能引用该类型名
+	struct SuspectProcess
+	{
+		DWORD pid = 0;
+		std::wstring name;
+		std::wstring cls = L"(无窗口)";
+		std::wstring title;
+	};
+}
+
+std::wstring Injector::describeTargetSearch(const std::wstring& processName) const
+{
+	std::wostringstream detail;
+	detail << L"（预设进程名: " << processName
+		<< L"，预设窗口类名: " << getTargetWindowClass()
+		<< L"，预设窗口标题: " << getTargetWindowTitle() << L"）";
+
+	std::vector<SuspectProcess> candidates;
+
+	const auto procList = mem::getProcList();
+	for (const auto& proc : procList)
+	{
+		const auto lowerName = string::toLower(proc.second);
+		// 宽松过滤：名字里含 ra2 / yuri / gamemd 的都算疑似目标，
+		// 避免因 exe 改名或 KK 壳进程名差异而漏检。
+		if (lowerName.find(L"ra2") == std::wstring::npos
+			&& lowerName.find(L"yuri") == std::wstring::npos
+			&& lowerName.find(L"gamemd") == std::wstring::npos)
+			continue;
+
+		SuspectProcess found{ proc.first, proc.second, L"(无窗口)", L"" };
+		EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+			auto* item = reinterpret_cast<SuspectProcess*>(lParam);
+			DWORD owner = 0;
+			GetWindowThreadProcessId(hwnd, &owner);
+			if (owner != item->pid || !IsWindowVisible(hwnd)) return TRUE;
+			wchar_t cls[256]{};
+			wchar_t title[256]{};
+			GetClassNameW(hwnd, cls, 256);
+			GetWindowTextW(hwnd, title, 256);
+			item->cls = cls;
+			item->title = title;
+			return FALSE;
+			}, reinterpret_cast<LPARAM>(&found));
+		candidates.push_back(std::move(found));
+	}
+
+	if (candidates.empty())
+	{
+		detail << L"。系统中未发现名字含 ra2/yuri/gamemd 的进程——"
+			L"请确认游戏已在运行，且启动器未把游戏跑在独立会话（如 WeGame 沙箱）中。";
+		return detail.str();
+	}
+
+	detail << L"。检测到以下疑似进程：";
+	for (const auto& item : candidates)
+	{
+		detail << L"\n    pid=" << item.pid << L" " << item.name
+			<< L"，窗口类名=\"" << item.cls << L"\"";
+		if (!item.title.empty())
+			detail << L"，标题=\"" << item.title << L"\"";
+	}
+	detail << L"\n请在\"运行中的进程\"下拉中选中实际进程名后重试；"
+		L"若窗口类名与预设不同，需在 vars.hpp 中补充对应预设。";
+	return detail.str();
 }
 
 std::wstring Injector::injectByLoadLibrary(HANDLE processHandle, const std::wstring& dllPath)

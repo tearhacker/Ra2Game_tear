@@ -13,6 +13,21 @@ GL-BaseHook/**/*.txt
 
 # MSVC 编译产物
 *.pdb
+*.obj
+*.tlog
+*.iobj
+*.ipdb
+
+# 运行时产物（含本机绝对路径 / PID / 模块基址，不提交）
+*.log
+AllkkGamesInjector/bin/
+AllkkGamesInjector/potatoInjector/
+*.i64
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
 
 # 启动器本地配置（含本机游戏路径，不提交）与打包产物
 starter_config.json
