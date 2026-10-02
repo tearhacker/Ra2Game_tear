@@ -112,6 +112,18 @@ namespace mem
 		DWORD pid = 0;
 	};
 
+	// 按 PID 反查进程名（用于状态面板显示"当前窗口目标"的进程名）。
+	// 走 getProcList 快照，找不到返回空串。
+	inline std::wstring getProcessNameByPID(DWORD pid) {
+		if (pid == 0) return {};
+		for (const auto& proc : getProcList())
+		{
+			if (proc.first == pid)
+				return proc.second;
+		}
+		return {};
+	}
+
 	// Spy++ 式窗口定位：按游戏主窗口的类名/标题直接找到窗口所属进程。
 	// 比按进程名查找可靠——壳与僵尸实例不拥有窗口，exe 被改名也不影响。
 	// 类名要求完全相等（忽略大小写），标题要求包含（忽略大小写）。

@@ -4,3 +4,7 @@ build/
 *.suo
 *.VC.db
 *.VC.opendb
+
+# ASCII junction to the Chinese-named YRpp third-party dir.
+# Recreate it with setup_yrpp_link.bat (see that script for why it exists).
+third_party/yrpp

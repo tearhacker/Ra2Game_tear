@@ -449,7 +449,9 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
     {
         ImGui::SetNextWindowSize(ImVec2(620.0f, 430.0f), ImGuiCond_FirstUseEver);
         bool open = true;
-        if (ImGui::Begin("Ra2Overlay", &open))
+        // 注：C++20 下 u8"..." 为 const char8_t*，无法隐式转 const char*；
+        // 源文件以 /utf-8 编译，直接用窄字面量即可正确得到 UTF-8 字节。
+        if (ImGui::Begin("泪心红警2尤里的复仇公益辅助裙435539500", &open))
         {
             if (ImGui::BeginTabBar("MainTabs"))
             {
@@ -570,7 +572,7 @@ void Ra2Overlay::UiShell::RenderFrame(HDC deviceContext)
                 DecorateTab("关于", aboutOpen);
                 if (aboutOpen)
                 {
-                    ImGui::TextWrapped("Ra2Overlay - 红警2尤里复仇(YR 1.001) 单人训练覆盖层。所有功能仅供离线使用。");
+                    ImGui::TextWrapped("泪心红警2尤里的复仇公益辅助裙435539500 - 红警2尤里复仇(YR 1.001) 单人训练覆盖层。所有功能仅供离线使用。");
                     ImGui::Separator();
                     ImGui::TextUnformatted("作者：tearhacker");
                     ImGui::Separator();

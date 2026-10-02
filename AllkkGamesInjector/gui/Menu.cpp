@@ -119,7 +119,7 @@ namespace
 		config.OversampleV = 1;
 		for (const char* fontPath : fontCandidates)
 		{
-			if (io.Fonts->AddFontFromFileTTF(fontPath, 16.0f, &config, glyphRanges) != nullptr)
+			if (io.Fonts->AddFontFromFileTTF(fontPath, 18.0f, &config, glyphRanges) != nullptr)
 				return;
 		}
 		io.Fonts->AddFontDefault();
@@ -133,7 +133,7 @@ bool Menu::initialize()
 	const auto nativeWindowTitle = makeRandomWindowTitle();
 	this->hwnd = ::CreateWindow(wc.lpszClassName, nativeWindowTitle.c_str(),
 		WS_POPUP,
-		100, 100, 500, 640, NULL, NULL, wc.hInstance, NULL);
+		100, 100, 880, 700, NULL, NULL, wc.hInstance, NULL);
 	if (this->hwnd == nullptr)
 	{
 		::UnregisterClass(wc.lpszClassName, wc.hInstance);
@@ -224,8 +224,8 @@ void Menu::loop()
 			ImGuiWindowFlags_NoScrollbar);
 		ImGui::BeginChild("Hero", ImVec2(0, 86), true);
 		ImGui::BeginGroup();
-		ImGui::TextColored(isDarkTheme ? ImVec4(0.42f, 0.80f, 1.00f, 1.00f) : ImVec4(0.08f, 0.40f, 0.78f, 1.00f), "TEARHACKER INJECTOR");
-		ImGui::TextDisabled("%s", langText("A clean workspace for your selected module", "为你所选模块提供的简洁工作区"));
+		ImGui::TextColored(isDarkTheme ? ImVec4(0.42f, 0.80f, 1.00f, 1.00f) : ImVec4(0.08f, 0.40f, 0.78f, 1.00f), "泪心专用辅助注入器");
+		ImGui::TextDisabled("裙435539500_完全免费收费你就被骗了");
 		ImGui::TextDisabled("%s", langText(
 			isDarkTheme ? "Night theme  -  live monitoring enabled" : "Day theme  -  live monitoring enabled",
 			isDarkTheme ? "夜间主题 - 实时监控已开启" : "日间主题 - 实时监控已开启"));
@@ -233,21 +233,23 @@ void Menu::loop()
 		ImGui::EndChild();
 		ImGui::Spacing();
 
-		// 独立工具条组件区：语言切换、主题切换、退出程序三个按钮，不与上方文字挤在一行
-		ImGui::BeginChild("Toolbar", ImVec2(0, 50), true);
+		// 独立工具条组件区：语言切换、主题切换、自动退出、退出程序，不与上方文字挤在一行
+		ImGui::BeginChild("Toolbar", ImVec2(0, 62), true);
 		if (ImGui::Button(isChineseLang ? "EN" : "中文", ImVec2(72.0f, 32.0f)))
 			isChineseLang = !isChineseLang;
 		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button(isDarkTheme ? langText("Day mode", "日间模式") : langText("Night mode", "夜间模式"), ImVec2(96.0f, 32.0f)))
+		if (ImGui::Button(isDarkTheme ? langText("Day mode", "日间模式") : langText("Night mode", "夜间模式"), ImVec2(110.0f, 32.0f)))
 		{
 			isDarkTheme = !isDarkTheme;
 			setupMenuStyle(isDarkTheme, 1.0f);
 		}
 		ImGui::SameLine(0.0f, 8.0f);
+		ImGui::Checkbox(langText("Auto-exit after op", "操作完成后自动退出"), &g_injector->shouldAutoExit);
+		ImGui::SameLine(0.0f, 8.0f);
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.72f, 0.26f, 0.29f, 0.85f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.86f, 0.32f, 0.35f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.60f, 0.20f, 0.23f, 1.0f));
-		if (ImGui::Button(langText("Exit program", "退出程序"), ImVec2(96.0f, 32.0f)))
+		if (ImGui::Button(langText("Exit program", "退出程序"), ImVec2(110.0f, 32.0f)))
 			::PostMessage(hwnd, WM_CLOSE, 0, 0);
 		ImGui::PopStyleColor(3);
 		ImGui::EndChild();
@@ -368,17 +370,26 @@ const char* Menu::langText(const char* en, const char* zh) const
 
 void Menu::renderStatusPanel()
 {
-	ImGui::BeginChild("StatusPanel", ImVec2(0, 74), true);
+	ImGui::BeginChild("StatusPanel", ImVec2(0, 78), true);
 	ImGui::TextDisabled("%s", langText("SYSTEM STATUS", "系统状态"));
 	ImGui::Separator();
 
 	const auto running = g_injector->targetRunning.load(std::memory_order_acquire);
 	const auto statusColor = running ? ImVec4(0.35f, 0.85f, 0.55f, 1.0f) : ImVec4(0.92f, 0.38f, 0.42f, 1.0f);
+
+	// 第 1 行：预设/下拉选定的目标进程 —— 名字 + 运行状态
 	ImGui::TextColored(statusColor, ">>");
 	ImGui::SameLine();
-	ImGui::TextUnformatted(langText("Target process", "目标进程"));
-	ImGui::SameLine(178.0f);
-	ImGui::TextColored(statusColor, "%s", running ? langText("RUNNING", "运行中") : langText("OFFLINE", "未运行"));
+	ImGui::TextUnformatted(langText("Selected target", "选中目标进程"));
+	ImGui::SameLine(200.0f);
+	ImGui::TextColored(statusColor, "%s", toDisplayString(g_injector->getTargetProcessName()).c_str());
+	ImGui::SameLine();
+	ImGui::TextColored(statusColor, "%s", running ? langText("[RUNNING]", "[运行中]") : langText("[OFFLINE]", "[未运行]"));
+
+	// 第 2 行：窗口类名（真实探测目标行已按需求移除）
+	ImGui::Spacing();
+	ImGui::TextDisabled("%s %s", langText("Window class:", "窗口类名:"),
+		toDisplayString(g_injector->getTargetWindowClass()).c_str());
 	ImGui::EndChild();
 }
 
@@ -387,7 +398,6 @@ void Menu::renderTargetPanel()
 	ImGui::BeginChild("TargetPanel", ImVec2(0, 150), true);
 		ImGui::TextDisabled("%s", langText("TARGET PROCESS", "目标进程"));
 		ImGui::Separator();
-		ImGui::Checkbox(langText("Auto-close after operation", "操作完成后自动退出"), &g_injector->shouldAutoExit);
 
 		const auto& activeProfile = vars::gameProfiles[std::clamp(this->selectedGame, 0,
 			static_cast<int>(std::size(vars::gameProfiles)) - 1)];
@@ -630,10 +640,11 @@ void Menu::detectGame()
 		// 窗口定位与进程名定位并列：任一命中即视为目标在运行。
 		// 用户手动从"运行中的进程"下拉选目标时窗口信息不会更新（那份列表
 		// 只有进程名），此时状态显示完全依赖进程名匹配，这是正常的。
-		const bool runningByWindow = mem::getProcIDByWindow(
-			g_injector->getTargetWindowClass(), g_injector->getTargetWindowTitle()) != 0;
-		if (runningByWindow)
+		const auto livePid = mem::getProcIDByWindow(
+			g_injector->getTargetWindowClass(), g_injector->getTargetWindowTitle());
+		if (livePid != 0)
 			g_injector->targetRunning.store(true, std::memory_order_release);
+
 		std::this_thread::sleep_for(1s);
 	}
 }
